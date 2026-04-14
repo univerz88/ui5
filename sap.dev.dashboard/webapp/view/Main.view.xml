@@ -1,0 +1,485 @@
+<mvc:View
+	controllerName="sap.dev.dashboard.controller.Main"
+	displayBlock="true"
+	xmlns="sap.m"
+	xmlns:mvc="sap.ui.core.mvc"
+	xmlns:core="sap.ui.core"
+	xmlns:unified="sap.ui.unified"
+	xmlns:viz="sap.viz.ui5.controls">
+
+	<!-- ====== 다이얼로그 1: 설계완료 후 미개발 ====== -->
+	<mvc:dependents>
+		<Dialog
+			id="designedNotDevDialog"
+			title="{i18n>dialogDesignedNotDev}"
+			contentWidth="960px"
+			contentHeight="70vh"
+			resizable="true"
+			draggable="true">
+			<subHeader>
+				<Toolbar style="Clear">
+					<Text text="{dashboard>/modal1/subTitle}" class="sapUiSmallMarginBegin"/>
+					<ToolbarSpacer/>
+					<IconTabBar
+						id="modal1ZoneTabBar"
+						select=".onModal1ZoneSelect"
+						backgroundDesign="Transparent"
+						class="sapUiNoContentPadding devDashTabBar">
+						<items>
+							<IconTabFilter key="ALL" text="{i18n>all}"/>
+						</items>
+					</IconTabBar>
+				</Toolbar>
+			</subHeader>
+			<content>
+				<Table
+					id="designedNotDevTable"
+					items="{dashboard>/modal1/items}"
+					noDataText="{i18n>noRemaining}"
+					sticky="ColumnHeaders"
+					growing="true"
+					growingThreshold="100">
+					<columns>
+						<Column width="3rem"><Text text="{i18n>colNo}"/></Column>
+						<Column width="3.5rem"><Text text="{i18n>colZone}"/></Column>
+						<Column minScreenWidth="Tablet" demandPopin="false"><Text text="{i18n>colName}"/></Column>
+						<Column width="6rem" hAlign="Center"><Text text="설계완료일"/></Column>
+						<Column width="6rem" hAlign="Center"><Text text="{i18n>colDevPlan}"/></Column>
+						<Column width="8rem"><Text text="개발자"/></Column>
+						<Column width="3rem" hAlign="Center"><Text text="{i18n>colMD}"/></Column>
+						<Column width="5rem"><Text text="{i18n>colStatus}"/></Column>
+					</columns>
+					<items>
+						<ColumnListItem type="Inactive">
+							<cells>
+								<Text text="{dashboard>no}" class="devDashMono"/>
+								<ObjectStatus text="{dashboard>zone}" state="{dashboard>zoneState}"/>
+								<VBox>
+									<Text text="{dashboard>name}"/>
+									<Text text="{dashboard>elapsedTxt}" class="devDashSmall devDashElapsed"/>
+								</VBox>
+								<Text text="{dashboard>designA}" class="devDashMono devDashDateCell"/>
+								<Text text="{dashboard>devPlan}" class="devDashMono devDashDateCell"/>
+								<Text text="{dashboard>devWho}" class="devDashSmall"/>
+								<Text text="{dashboard>md}" class="devDashMono"/>
+								<ObjectStatus text="{dashboard>statusLbl}" state="{dashboard>statusState}"/>
+							</cells>
+						</ColumnListItem>
+					</items>
+				</Table>
+			</content>
+			<endButton>
+				<Button text="{i18n>dialogClose}" press=".onCloseModal1"/>
+			</endButton>
+		</Dialog>
+
+		<!-- ====== 다이얼로그 2: 설계 미완료 ====== -->
+		<Dialog
+			id="noDesignDialog"
+			title="{i18n>dialogNoDesign}"
+			contentWidth="960px"
+			contentHeight="70vh"
+			resizable="true"
+			draggable="true">
+			<subHeader>
+				<Toolbar style="Clear">
+					<Text text="{dashboard>/modal2/subTitle}" class="sapUiSmallMarginBegin"/>
+					<ToolbarSpacer/>
+					<IconTabBar
+						id="modal2ZoneTabBar"
+						select=".onModal2ZoneSelect"
+						backgroundDesign="Transparent"
+						class="sapUiNoContentPadding devDashTabBar">
+						<items>
+							<IconTabFilter key="ALL" text="{i18n>all}"/>
+						</items>
+					</IconTabBar>
+				</Toolbar>
+			</subHeader>
+			<content>
+				<Table
+					id="noDesignTable"
+					items="{dashboard>/modal2/items}"
+					noDataText="{i18n>noRemaining}"
+					sticky="ColumnHeaders"
+					growing="true"
+					growingThreshold="100">
+					<columns>
+						<Column width="3rem"><Text text="{i18n>colNo}"/></Column>
+						<Column width="3.5rem"><Text text="{i18n>colZone}"/></Column>
+						<Column minScreenWidth="Tablet" demandPopin="false"><Text text="{i18n>colName}"/></Column>
+						<Column width="6rem" hAlign="Center"><Text text="설계계획일"/></Column>
+						<Column width="6rem" hAlign="Center"><Text text="{i18n>colDevPlan}"/></Column>
+						<Column width="8rem"><Text text="설계자"/></Column>
+						<Column width="3rem" hAlign="Center"><Text text="{i18n>colMD}"/></Column>
+						<Column width="5rem"><Text text="{i18n>colStatus}"/></Column>
+					</columns>
+					<items>
+						<ColumnListItem type="Inactive">
+							<cells>
+								<Text text="{dashboard>no}" class="devDashMono"/>
+								<ObjectStatus text="{dashboard>zone}" state="{dashboard>zoneState}"/>
+								<VBox>
+									<Text text="{dashboard>name}"/>
+									<Text text="{dashboard>dDayTxt}" class="devDashSmall devDashDDay"/>
+								</VBox>
+								<Text text="{dashboard>designP}" class="devDashMono devDashDateCell"/>
+								<Text text="{dashboard>devPlan}" class="devDashMono devDashDateCell"/>
+								<Text text="{dashboard>devWho}" class="devDashSmall"/>
+								<Text text="{dashboard>md}" class="devDashMono"/>
+								<ObjectStatus text="{dashboard>statusLbl}" state="{dashboard>statusState}"/>
+							</cells>
+						</ColumnListItem>
+					</items>
+				</Table>
+			</content>
+			<endButton>
+				<Button text="{i18n>dialogClose}" press=".onCloseModal2"/>
+			</endButton>
+		</Dialog>
+	</mvc:dependents>
+
+	<!-- ====== 메인 페이지 ====== -->
+	<Page
+		id="mainPage"
+		title="{i18n>appTitle}"
+		class="devDashPage">
+
+		<headerContent>
+			<Text id="baseDateText" text="{dashboard>/baseDateDisplay}" class="devDashBaseDate sapUiSmallMarginEnd"/>
+			<unified:FileUploader
+				id="fileUploader"
+				name="xlsxUpload"
+				fileType="xlsx,xls"
+				change=".onFileChange"
+				buttonText="{i18n>uploadBtn}"
+				buttonOnly="true"
+				multiple="false"
+				style="Emphasized"/>
+		</headerContent>
+
+		<content>
+			<!-- 파싱 결과 배너 -->
+			<MessageStrip
+				id="parseBanner"
+				visible="false"
+				showCloseButton="true"
+				class="sapUiSmallMargin"/>
+
+			<!-- ====== 빈 상태 ====== -->
+			<IllustratedMessage
+				id="emptyState"
+				visible="{= !${dashboard>/isLoaded}}"
+				title="{i18n>emptyTitle}"
+				description="{i18n>emptyDesc}"
+				illustrationType="sapIllus-EmptyList"/>
+
+			<!-- ====== 대시보드 컨텐츠 ====== -->
+			<VBox id="dashboardContent" visible="{dashboard>/isLoaded}">
+
+				<!-- 모듈 탭바 -->
+				<IconTabBar
+					id="moduleTabBar"
+					select=".onModuleSelect"
+					backgroundDesign="Transparent"
+					class="devDashModuleTabBar">
+					<items>
+						<IconTabFilter key="ALL" text="전체" count="{dashboard>/moduleCounts/ALL}"/>
+						<IconTabFilter key="SD" text="SD" count="{dashboard>/moduleCounts/SD}" design="Horizontal"/>
+						<IconTabFilter key="MM" text="MM" count="{dashboard>/moduleCounts/MM}" design="Horizontal"/>
+						<IconTabFilter key="PP" text="PP" count="{dashboard>/moduleCounts/PP}" design="Horizontal"/>
+						<IconTabFilter key="FI" text="FI" count="{dashboard>/moduleCounts/FI}" design="Horizontal"/>
+						<IconTabFilter key="CO" text="CO" count="{dashboard>/moduleCounts/CO}" design="Horizontal"/>
+						<IconTabFilter key="CM" text="CM" count="{dashboard>/moduleCounts/CM}" design="Horizontal"/>
+					</items>
+				</IconTabBar>
+
+				<!-- ── KPI 섹션 ── -->
+				<VBox class="sapUiSmallMarginBeginEnd sapUiTinyMarginBottom">
+					<Label text="{i18n>sectionOverall}" class="devDashSectionTitle"/>
+					<HBox wrap="Wrap" class="sapUiTinyMarginTop" id="kpiBox">
+						<!-- KPI 카드 6개: 전체/설계완료/개발완료/잔여/잔여MD/D-Day -->
+						<GenericTile
+							header="{i18n>kpiTotal}"
+							subheader="{dashboard>/kpi/modLabel}"
+							class="devDashKpiTile sapUiSmallMarginEnd sapUiSmallMarginBottom">
+							<tileContent>
+								<TileContent>
+									<content>
+										<NumericContent
+											value="{dashboard>/kpi/total}"
+											scale="개"
+											valueColor="Neutral"
+											indicator="None"
+											withMargin="false"/>
+									</content>
+								</TileContent>
+							</tileContent>
+						</GenericTile>
+						<GenericTile
+							header="{i18n>kpiDesignDone}"
+							subheader="{dashboard>/kpi/designPct}% (전체 기준)"
+							class="devDashKpiTile sapUiSmallMarginEnd sapUiSmallMarginBottom">
+							<tileContent>
+								<TileContent>
+									<content>
+										<NumericContent
+											value="{dashboard>/kpi/designDone}"
+											scale="개"
+											valueColor="Good"
+											indicator="None"
+											withMargin="false"/>
+									</content>
+								</TileContent>
+							</tileContent>
+						</GenericTile>
+						<GenericTile
+							header="{i18n>kpiDevDone}"
+							subheader="{dashboard>/kpi/devPct}% (전체) · {dashboard>/kpi/designToDevPct}% (설계기준)"
+							class="devDashKpiTile sapUiSmallMarginEnd sapUiSmallMarginBottom">
+							<tileContent>
+								<TileContent>
+									<content>
+										<NumericContent
+											value="{dashboard>/kpi/devDone}"
+											scale="개"
+											valueColor="Good"
+											indicator="None"
+											withMargin="false"/>
+									</content>
+								</TileContent>
+							</tileContent>
+						</GenericTile>
+						<GenericTile
+							header="{i18n>kpiRemain}"
+							subheader="개발 실적 미등록"
+							class="devDashKpiTile sapUiSmallMarginEnd sapUiSmallMarginBottom">
+							<tileContent>
+								<TileContent>
+									<content>
+										<NumericContent
+											value="{dashboard>/kpi/remain}"
+											scale="개"
+											valueColor="Critical"
+											indicator="None"
+											withMargin="false"/>
+									</content>
+								</TileContent>
+							</tileContent>
+						</GenericTile>
+						<GenericTile
+							header="{i18n>kpiRemainMD}"
+							subheader="난이도 기반 합산"
+							class="devDashKpiTile sapUiSmallMarginEnd sapUiSmallMarginBottom">
+							<tileContent>
+								<TileContent>
+									<content>
+										<NumericContent
+											value="{dashboard>/kpi/remainMD}"
+											scale="MD"
+											valueColor="Critical"
+											indicator="None"
+											withMargin="false"/>
+									</content>
+								</TileContent>
+							</tileContent>
+						</GenericTile>
+						<GenericTile
+							header="{i18n>kpiDeadline}"
+							subheader="영업일 (~ 2026-05-31)"
+							class="devDashKpiTile sapUiSmallMarginBottom">
+							<tileContent>
+								<TileContent>
+									<content>
+										<NumericContent
+											value="{dashboard>/kpi/deadlineDays}"
+											scale="일"
+											valueColor="{dashboard>/kpi/deadlineColor}"
+											indicator="None"
+											withMargin="false"/>
+									</content>
+								</TileContent>
+							</tileContent>
+						</GenericTile>
+					</HBox>
+				</VBox>
+
+				<!-- ── 진행률 섹션 ── -->
+				<Panel
+					id="progressPanel"
+					headerText="{i18n>sectionProgress}"
+					expandable="false"
+					class="sapUiSmallMarginBeginEnd sapUiSmallMarginBottom devDashPanel">
+					<content>
+						<!-- 전체 개발 완료율 -->
+						<VBox class="sapUiSmallMargin">
+							<HBox justifyContent="SpaceBetween" alignItems="Center" class="sapUiTinyMarginBottom">
+								<Label text="전체 프로그램 대비 개발 완료율" design="Bold"/>
+								<Text text="{dashboard>/kpi/devDone}개 / {dashboard>/kpi/total}개  ·  {dashboard>/kpi/devPct}%" class="devDashMono devDashSmall"/>
+							</HBox>
+							<ProgressIndicator
+								percentValue="{dashboard>/kpi/devPctNum}"
+								displayValue="{dashboard>/kpi/devPct}%"
+								state="None"
+								height="10px"/>
+						</VBox>
+
+						<!-- 설계완료 대비 개발 완료율 -->
+						<VBox class="sapUiSmallMarginBeginEnd sapUiSmallMarginBottom devDashHighlight">
+							<HBox justifyContent="SpaceBetween" alignItems="Center" class="sapUiTinyMarginBottom">
+								<Label text="설계 완료 대비 개발 완료율" design="Bold"/>
+								<Text text="{dashboard>/kpi/devDone}개 / {dashboard>/kpi/designDone}개  ·  {dashboard>/kpi/designToDevPct}%" class="devDashMono devDashSmall"/>
+							</HBox>
+							<ProgressIndicator
+								percentValue="{dashboard>/kpi/designToDevPctNum}"
+								displayValue="{dashboard>/kpi/designToDevPct}%"
+								state="Warning"
+								height="10px"/>
+							<HBox class="sapUiTinyMarginTop">
+								<Text text="설계완료 후 미개발: " class="devDashSmall"/>
+								<Link text="{dashboard>/kpi/designedNotDevCount}개" press=".onOpenModal1" class="devDashDrillLink devDashSmall"/>
+								<Text text="    /    설계 미완료: " class="devDashSmall"/>
+								<Link text="{dashboard>/kpi/noDesignCount}개" press=".onOpenModal2" class="devDashDrillLink devDashSmall"/>
+							</HBox>
+						</VBox>
+
+						<!-- 구분별(CA/HQ/VN) 진행률 -->
+						<List
+							id="zoneProgressList"
+							items="{dashboard>/progressZones}"
+							showSeparators="None"
+							noDataText="">
+							<CustomListItem type="Inactive">
+								<content>
+									<VBox class="sapUiSmallMarginBeginEnd sapUiTinyMarginBottom">
+										<HBox justifyContent="SpaceBetween" alignItems="Center" class="sapUiTinyMarginBottom">
+											<Label text="{dashboard>label}" design="Bold"/>
+											<Text text="{dashboard>done}개 / {dashboard>total}개  ·  잔여 {dashboard>remain}개 / {dashboard>remainMD} M/D" class="devDashMono devDashSmall"/>
+										</HBox>
+										<ProgressIndicator
+											percentValue="{dashboard>pct}"
+											displayValue="{dashboard>pct}%"
+											state="None"
+											height="8px"/>
+									</VBox>
+								</content>
+							</CustomListItem>
+						</List>
+
+						<!-- 설계 완료율 -->
+						<VBox class="sapUiSmallMargin sapUiTinyMarginTop">
+							<HBox justifyContent="SpaceBetween" alignItems="Center" class="sapUiTinyMarginBottom">
+								<Label text="설계 완료율 (전체 기준)" design="Bold"/>
+								<Text text="{dashboard>/kpi/designDone}개 / {dashboard>/kpi/total}개  ·  {dashboard>/kpi/designPct}%" class="devDashMono devDashSmall"/>
+							</HBox>
+							<ProgressIndicator
+								percentValue="{dashboard>/kpi/designPctNum}"
+								displayValue="{dashboard>/kpi/designPct}%"
+								state="Information"
+								height="8px"/>
+						</VBox>
+					</content>
+				</Panel>
+
+				<!-- ── 차트 섹션 ── -->
+				<VBox class="sapUiSmallMarginBeginEnd sapUiSmallMarginBottom">
+					<Label text="{i18n>sectionCharts}" class="devDashSectionTitle"/>
+					<HBox wrap="Wrap" class="sapUiTinyMarginTop">
+						<!-- 차트 1: 구분별 완료/잔여 -->
+						<VBox class="devDashChartCard sapUiSmallMarginEnd sapUiSmallMarginBottom">
+							<Text text="{i18n>chartZoneBar}" class="devDashChartTitle"/>
+							<viz:VizFrame
+								id="zoneBarChart"
+								vizType="stacked_column"
+								height="220px"
+								width="100%"
+								uiConfig="{applicationSet:'fiori'}"/>
+						</VBox>
+						<!-- 차트 2: M/D 도넛 -->
+						<VBox class="devDashChartCard sapUiSmallMarginEnd sapUiSmallMarginBottom">
+							<Text text="{i18n>chartMdDonut}" class="devDashChartTitle"/>
+							<viz:VizFrame
+								id="mdDonutChart"
+								vizType="donut"
+								height="220px"
+								width="100%"
+								uiConfig="{applicationSet:'fiori'}"/>
+						</VBox>
+						<!-- 차트 3: 상태별 M/D -->
+						<VBox class="devDashChartCardWide sapUiSmallMarginBottom">
+							<Text text="{i18n>chartStatusBar}" class="devDashChartTitle"/>
+							<viz:VizFrame
+								id="statusBarChart"
+								vizType="stacked_column"
+								height="220px"
+								width="100%"
+								uiConfig="{applicationSet:'fiori'}"/>
+						</VBox>
+					</HBox>
+				</VBox>
+
+				<!-- ── 잔여 프로그램 테이블 ── -->
+				<Panel
+					id="tablePanel"
+					headerText="{i18n>sectionTable}"
+					expandable="false"
+					class="sapUiSmallMarginBeginEnd sapUiSmallMarginBottom devDashPanel">
+					<content>
+						<!-- 구분 필터 탭 -->
+						<IconTabBar
+							id="zoneTabBar"
+							select=".onZoneSelect"
+							backgroundDesign="Transparent"
+							class="devDashTabBar">
+							<items>
+								<IconTabFilter key="ALL" text="{i18n>all}"/>
+							</items>
+						</IconTabBar>
+
+						<!-- 요약 통계 -->
+						<HBox wrap="Wrap" class="sapUiSmallMargin devDashSummaryRow">
+							<VBox class="devDashSummaryCard sapUiSmallMarginEnd">
+								<Label text="잔여 프로그램" design="Bold"/>
+								<Text text="{dashboard>/summary/total}개 · {dashboard>/summary/totalMD} M/D" class="devDashMono"/>
+							</VBox>
+							<VBox class="devDashSummaryCard sapUiSmallMarginEnd">
+								<Label text="정상" design="Bold"/>
+								<Text text="{dashboard>/summary/ok}개" class="devDashStatusOk devDashMono"/>
+							</VBox>
+							<VBox class="devDashSummaryCard sapUiSmallMarginEnd">
+								<Label text="위험" design="Bold"/>
+								<Text text="{dashboard>/summary/risk}개" class="devDashStatusRisk devDashMono"/>
+							</VBox>
+							<VBox class="devDashSummaryCard">
+								<Label text="마감초과 / 미정" design="Bold"/>
+								<Text text="{dashboard>/summary/overAndNone}개" class="devDashStatusOver devDashMono"/>
+							</VBox>
+						</HBox>
+
+						<!-- 메인 테이블 (프로그래매틱 렌더링) -->
+						<Table
+							id="remainingTable"
+							noDataText="{i18n>noRemaining}"
+							sticky="ColumnHeaders"
+							growing="true"
+							growingThreshold="50"
+							class="devDashTable">
+							<columns>
+								<Column width="3.5rem"><Text text="{i18n>colNo}"/></Column>
+								<Column width="3.5rem"><Text text="{i18n>colZone}"/></Column>
+								<Column minScreenWidth="Tablet" demandPopin="false"><Text text="{i18n>colName}"/></Column>
+								<Column width="6.5rem" hAlign="Center"><Text text="{i18n>colDevPlan}"/></Column>
+								<Column width="3rem" hAlign="Center"><Text text="{i18n>colMD}"/></Column>
+								<Column width="4rem" hAlign="Center"><Text text="{i18n>colAvail}"/></Column>
+								<Column width="4.5rem" hAlign="Center"><Text text="{i18n>colGap}"/></Column>
+								<Column width="5.5rem"><Text text="{i18n>colStatus}"/></Column>
+								<Column width="6rem"><Text text="{i18n>colLoad}"/></Column>
+							</columns>
+						</Table>
+					</content>
+				</Panel>
+
+			</VBox><!-- end dashboardContent -->
+		</content>
+	</Page>
+</mvc:View>

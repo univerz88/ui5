@@ -1,0 +1,8 @@
+.myAppDemoWT .myCustomButton.sapMBtn {
+	margin-right: 0.125rem;
+}
+
+.myAppDemoWT .myCustomText {
+	display: inline-block;
+	font-weight: bold;
+}

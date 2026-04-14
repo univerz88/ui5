@@ -1,0 +1,177 @@
+/* ====================================================
+   SAP 개발 진척 현황 대시보드 — 커스텀 스타일
+   SAP Fiori 표준 클래스를 최우선으로 사용하고,
+   오버라이드가 꼭 필요한 경우에만 사용
+   ==================================================== */
+
+/* ── 모노스페이스 텍스트 (날짜·숫자) ── */
+.devDashMono {
+	font-family: "DM Mono", "Courier New", monospace;
+	font-size: 0.75rem;
+}
+
+/* ── 소형 보조 텍스트 ── */
+.devDashSmall {
+	font-size: 0.7rem;
+}
+
+/* ── 날짜 셀 색상 ── */
+.devDashDateCell {
+	color: var(--sapContent_LabelColor);
+}
+
+/* ── 섹션 제목 ── */
+.devDashSectionTitle {
+	font-size: 0.7rem;
+	font-weight: 700;
+	color: var(--sapContent_LabelColor);
+	text-transform: uppercase;
+	letter-spacing: 0.1em;
+	display: block;
+	margin-bottom: 0.5rem;
+}
+
+/* ── 헤더 ── */
+.devDashHeader {
+	border-bottom: 1px solid var(--sapPageHeader_BorderColor);
+}
+
+.devDashHeaderTitle {
+	font-size: 1rem !important;
+	font-weight: 700 !important;
+}
+
+.devDashHeaderSub {
+	font-size: 0.7rem;
+	color: var(--sapContent_LabelColor);
+}
+
+.devDashBaseDate {
+	font-size: 0.75rem;
+	color: var(--sapContent_LabelColor);
+	font-family: "DM Mono", monospace;
+	background: var(--sapShell_InteractiveBackground);
+	padding: 0.3rem 0.75rem;
+	border-radius: 0.25rem;
+	border: 1px solid var(--sapField_BorderColor);
+}
+
+/* ── KPI 타일 크기 조정 ── */
+.devDashKpiTile {
+	min-width: 10rem;
+	flex: 1 1 10rem;
+}
+
+/* ── 진행률 섹션: 설계완료 하이라이트 박스 ── */
+.devDashHighlight {
+	background: var(--sapHighlightColor_Background, #fffbeb);
+	border: 1px solid var(--sapWarningColor, #fde68a);
+	border-radius: 0.5rem;
+	padding: 0.75rem 1rem;
+}
+
+/* ── 드릴다운 링크 ── */
+.devDashDrillLink {
+	font-weight: 700;
+	text-decoration: underline dashed;
+}
+
+/* ── 패널 스타일 ── */
+.devDashPanel {
+	border: 1px solid var(--sapGroup_ContentBorderColor);
+	border-radius: 0.75rem;
+	overflow: hidden;
+}
+
+/* ── 차트 카드 ── */
+.devDashChartCard {
+	background: var(--sapBaseColor);
+	border: 1px solid var(--sapGroup_ContentBorderColor);
+	border-radius: 0.75rem;
+	padding: 0.75rem;
+	flex: 1 1 18rem;
+	min-width: 18rem;
+}
+
+.devDashChartCardWide {
+	background: var(--sapBaseColor);
+	border: 1px solid var(--sapGroup_ContentBorderColor);
+	border-radius: 0.75rem;
+	padding: 0.75rem;
+	flex: 1.6 1 24rem;
+	min-width: 22rem;
+}
+
+.devDashChartTitle {
+	font-size: 0.7rem;
+	font-weight: 600;
+	color: var(--sapContent_LabelColor);
+	display: block;
+	margin-bottom: 0.5rem;
+}
+
+/* ── 요약 카드 행 ── */
+.devDashSummaryRow {
+	background: var(--sapShell_InteractiveBackground);
+	border-radius: 0.5rem;
+	margin-bottom: 0.5rem;
+}
+
+.devDashSummaryCard {
+	min-width: 8rem;
+}
+
+/* ── 상태 색상 ── */
+.devDashStatusOk {
+	color: #065f46 !important;
+}
+
+.devDashStatusRisk {
+	color: #92400e !important;
+}
+
+.devDashStatusOver {
+	color: #b91c1c !important;
+}
+
+/* ── 경과일 텍스트 ── */
+.devDashElapsed {
+	color: #dc2626;
+}
+
+/* ── D-Day 텍스트 ── */
+.devDashDDay {
+	color: #059669;
+}
+
+/* ── 모듈 탭바 고정 스타일 ── */
+.devDashModuleTabBar {
+	border-bottom: 2px solid var(--sapGroup_ContentBorderColor);
+	margin-bottom: 0.75rem;
+}
+
+/* ── 대시보드 페이지 배경 ── */
+.devDashPage > .sapMPageBg {
+	background-color: var(--sapShell_Background);
+}
+
+/* ── 테이블 행 고정 폰트 ── */
+.devDashTable .sapMListTblCell {
+	vertical-align: middle;
+}
+
+/* ── 다이얼로그 탭바 소형화 ── */
+.devDashTabBar.sapMITB {
+	min-height: 2rem;
+}
+
+/* ── 반응형: 화면 좁을 때 ── */
+@media (max-width: 800px) {
+	.devDashChartCard,
+	.devDashChartCardWide {
+		min-width: calc(100vw - 3rem);
+	}
+	.devDashKpiTile {
+		min-width: calc(50vw - 2rem);
+	}
+}
