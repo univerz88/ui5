@@ -1,5 +1,0 @@
-0000000000000000000000000000000000000000 45441a5015720b7f98eb75fe45dc0027b6f4d1a5 univerz88 <univerz88@github.com> 1776000743 +0900	commit (initial): Initial commit: UI5 Walkthrough Tutorial (Step 1-32)
-45441a5015720b7f98eb75fe45dc0027b6f4d1a5 0000000000000000000000000000000000000000 univerz88 <univerz88@github.com> 1776000748 +0900	Branch: renamed refs/heads/master to refs/heads/main
-0000000000000000000000000000000000000000 45441a5015720b7f98eb75fe45dc0027b6f4d1a5 univerz88 <univerz88@github.com> 1776000748 +0900	Branch: renamed refs/heads/master to refs/heads/main
-45441a5015720b7f98eb75fe45dc0027b6f4d1a5 8640e08c9918368f98a181aaeffa600e64b5c987 univerz88 <univerz88@github.com> 1776000874 +0900	commit: refactor: move project files into ui5.walkthrough subfolder
-8640e08c9918368f98a181aaeffa600e64b5c987 6e0db8c759eb28a29214029dc1f77f7ce1afef16 univerz88 <univerz88@github.com> 1776000940 +0900	commit: docs: add root README for UI5 projects repository
