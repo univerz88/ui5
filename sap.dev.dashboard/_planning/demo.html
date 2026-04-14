@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SAP 개발 진척 현황 대시보드</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --bg:#f4f5f7;--bg2:#fff;--bg3:#eef0f3;--bg4:#e4e6eb;
+  --border:rgba(0,0,0,0.07);--border2:rgba(0,0,0,0.13);
+  --text:#18191f;--text2:#5a5f72;--text3:#9ea3b5;
+  --ca:#2563eb;--hq:#7c3aed;--vn:#059669;
+  --ok:#059669;--risk:#d97706;--over:#dc2626;
+  --radius:12px;--radius-sm:7px;
+  --font:'Noto Sans KR',sans-serif;--mono:'DM Mono',monospace;
+  --sh:0 1px 3px rgba(0,0,0,0.07),0 0 0 1px rgba(0,0,0,0.04);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{background:var(--bg);color:var(--text);font-family:var(--font);font-size:14px;line-height:1.6;}
+
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:14px 28px;
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:300;box-shadow:0 1px 4px rgba(0,0,0,0.06);}
+.hdr-l{display:flex;align-items:center;gap:12px;}
+.tag{background:#eff6ff;color:var(--ca);font-size:11px;font-weight:500;
+  padding:3px 9px;border-radius:4px;font-family:var(--mono);letter-spacing:.06em;border:1px solid #bfdbfe;}
+.hdr-t{font-size:16px;font-weight:700;}
+.hdr-s{font-size:11px;color:var(--text2);margin-top:1px;}
+.hdr-r{display:flex;align-items:center;gap:10px;}
+.hdr-d{font-size:11px;color:var(--text2);font-family:var(--mono);
+  background:var(--bg3);padding:5px 13px;border-radius:var(--radius-sm);border:1px solid var(--border2);}
+
+.upload-zone{display:flex;align-items:center;gap:7px;padding:7px 14px;
+  background:var(--bg2);border:1.5px dashed var(--border2);border-radius:var(--radius-sm);
+  cursor:pointer;transition:all .15s;font-size:12px;color:var(--text2);}
+.upload-zone:hover{border-color:var(--ca);color:var(--ca);background:#f0f6ff;}
+.upload-zone.loaded{border-style:solid;border-color:var(--ok);color:var(--ok);background:#f0fdf9;}
+.upload-zone svg{width:15px;height:15px;flex-shrink:0;}
+#fileInput{display:none;}
+
+.parse-banner{display:none;align-items:center;gap:8px;padding:9px 20px;
+  font-size:12px;font-family:var(--mono);margin:8px 28px;}
+.parse-banner.ok{display:flex;background:#f0fdf9;border:1px solid #a7f3d0;border-radius:var(--radius-sm);color:#065f46;}
+.parse-banner.err{display:flex;background:#fef2f2;border:1px solid #fecaca;border-radius:var(--radius-sm);color:#991b1b;}
+
+.main{padding:22px 28px;max-width:1480px;margin:0 auto;}
+.sec-ttl{font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;
+  letter-spacing:.12em;margin-bottom:13px;padding-bottom:7px;border-bottom:1px solid var(--border);}
+
+/* EMPTY */
+.empty{text-align:center;padding:70px 20px;color:var(--text3);}
+.empty-ico{font-size:52px;margin-bottom:16px;opacity:.35;}
+.empty-t{font-size:15px;font-weight:500;color:var(--text2);margin-bottom:6px;}
+.empty-s{font-size:13px;margin-bottom:24px;}
+.col-hint{background:#f8f9ff;border:1px solid #dde3ff;border-radius:var(--radius-sm);
+  padding:16px 20px;max-width:680px;margin:0 auto;text-align:left;font-size:12px;color:var(--text2);}
+.col-hint strong{color:var(--text);font-weight:600;display:block;margin-bottom:10px;}
+.col-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;}
+.col-item{background:var(--bg3);padding:4px 9px;border-radius:4px;font-family:var(--mono);font-size:11px;}
+
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-bottom:20px;}
+.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);
+  padding:16px 18px;box-shadow:var(--sh);transition:box-shadow .18s;}
+.kpi:hover{box-shadow:0 4px 14px rgba(0,0,0,0.09);}
+.kpi-lbl{font-size:11px;color:var(--text2);margin-bottom:7px;font-weight:500;}
+.kpi-val{font-size:26px;font-weight:700;line-height:1;font-family:var(--mono);}
+.kpi-sub{font-size:11px;color:var(--text3);margin-top:5px;}
+.kpi-bw{height:3px;background:var(--bg3);border-radius:2px;margin-top:10px;overflow:hidden;}
+.kpi-bf{height:100%;border-radius:2px;transition:width .8s ease;}
+
+/* PROGRESS */
+.prog-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);
+  padding:20px 24px;margin-bottom:20px;box-shadow:var(--sh);}
+.pr{margin-bottom:14px;}
+.pr:last-child{margin-bottom:0;}
+.pr-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+.pr-lbl{font-size:13px;font-weight:500;}
+.pr-num{font-size:12px;color:var(--text2);font-family:var(--mono);}
+.pr-trk{height:10px;background:var(--bg3);border-radius:5px;overflow:hidden;}
+.pr-fill{height:100%;border-radius:5px;transition:width .8s cubic-bezier(.4,0,.2,1);}
+.pr-pct{font-size:11px;color:var(--text3);margin-top:3px;font-family:var(--mono);}
+.pr-hi{background:#fffbeb;border:1px solid #fde68a;border-radius:9px;padding:12px 15px;margin-bottom:14px;}
+.pr-hi .pr-lbl{color:#92400e;}
+.pr-hi .pr-num{color:#92400e;font-family:var(--mono);font-size:12px;}
+.pr-hi .pr-trk{background:#fef3c7;}
+.pr-hi .pr-pct{color:#b45309;}
+.divider{height:1px;background:var(--border);margin:14px 0;}
+
+/* CHARTS */
+.chart-grid{display:grid;grid-template-columns:1fr 1fr 1.7fr;gap:13px;margin-bottom:20px;}
+.cc{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:18px 21px;box-shadow:var(--sh);}
+.cc-t{font-size:11px;font-weight:600;color:var(--text2);margin-bottom:13px;}
+.leg{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
+.leg-i{display:flex;align-items:center;gap:4px;font-size:11px;color:var(--text2);}
+.leg-d{width:8px;height:8px;border-radius:2px;flex-shrink:0;}
+
+/* TABS */
+.tab-bar{display:flex;gap:5px;margin-bottom:14px;flex-wrap:wrap;}
+.tb{padding:5px 15px;font-size:12px;font-weight:500;border:1px solid var(--border2);
+  border-radius:var(--radius-sm);background:var(--bg3);color:var(--text2);cursor:pointer;
+  font-family:var(--font);transition:all .13s;}
+.tb:hover{background:var(--bg4);color:var(--text);}
+.tb.active    {background:#eff6ff;color:var(--ca);border-color:#bfdbfe;}
+.tb.ca.active {background:#eff6ff;color:var(--ca);border-color:#bfdbfe;}
+.tb.hq.active {background:#f5f3ff;color:var(--hq);border-color:#ddd6fe;}
+.tb.vn.active {background:#ecfdf5;color:var(--vn);border-color:#a7f3d0;}
+
+.sum-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;}
+.sc{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;}
+.sc-lbl{font-size:11px;color:var(--text2);margin-bottom:4px;font-weight:500;}
+.sc-val{font-size:20px;font-weight:700;font-family:var(--mono);line-height:1;}
+.sc-sub{font-size:11px;color:var(--text3);margin-top:3px;}
+
+/* TABLE */
+.tbl-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed;}
+thead th{background:var(--bg3);color:var(--text2);font-weight:600;padding:8px 10px;
+  text-align:left;white-space:nowrap;border-bottom:1px solid var(--border2);font-size:10px;
+  letter-spacing:.04em;text-transform:uppercase;position:sticky;top:59px;}
+tbody td{padding:7px 10px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover td{background:#f7f8fb;}
+.z-sep td{background:var(--bg3);color:var(--text3);font-size:10px;font-weight:700;
+  padding:6px 10px;letter-spacing:.07em;text-transform:uppercase;border-top:1px solid var(--border2);}
+.cn{width:52px;}.cz{width:48px;}.cm{width:auto;}.cd{width:90px;}
+.cmd{width:42px;text-align:center;}.cav{width:60px;text-align:center;}
+.cgp{width:65px;text-align:center;}.cst{width:78px;}.cbr{width:85px;}
+
+.bdg{display:inline-block;font-size:10px;padding:2px 6px;border-radius:3px;font-weight:600;font-family:var(--mono);white-space:nowrap;}
+.b-over{background:#fee2e2;color:#b91c1c;}
+.b-risk{background:#fef3c7;color:#92400e;}
+.b-ok  {background:#d1fae5;color:#065f46;}
+.b-none{background:#f1f0ee;color:#6b7280;}
+.zt{display:inline-block;font-size:10px;padding:2px 6px;border-radius:3px;font-weight:600;font-family:var(--mono);}
+.zt-ca{background:#eff6ff;color:var(--ca);}
+.zt-hq{background:#f5f3ff;color:var(--hq);}
+.zt-vn{background:#ecfdf5;color:var(--vn);}
+.bc{position:relative;height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;}
+.bf{height:100%;border-radius:3px;}
+.mono{font-family:var(--mono);}
+.det{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px 24px;box-shadow:var(--sh);}
+.footer{text-align:center;padding:20px;color:var(--text3);font-size:11px;border-top:1px solid var(--border);margin-top:24px;font-family:var(--mono);}
+.drill-link{display:inline-flex;align-items:center;gap:4px;color:#92400e;font-weight:700;cursor:pointer;border-bottom:1.5px dashed #d97706;transition:all .15s;font-family:var(--mono);}
+.drill-link:hover{color:#78350f;border-bottom-style:solid;}
+.drill-link::after{content:'↗';font-size:10px;opacity:.7;}
+.modal-overlay{display:none;position:fixed;inset:0;z-index:500;background:rgba(15,17,26,0.45);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:24px;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--bg2);border-radius:var(--radius);box-shadow:0 20px 60px rgba(0,0,0,0.18),0 0 0 1px rgba(0,0,0,0.06);width:100%;max-width:980px;max-height:86vh;display:flex;flex-direction:column;overflow:hidden;}
+.modal-hdr{display:flex;align-items:center;justify-content:space-between;padding:18px 24px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.modal-title{font-size:15px;font-weight:700;}
+.modal-badge{background:#fef3c7;color:#92400e;font-size:11px;font-weight:600;padding:3px 10px;border-radius:4px;font-family:var(--mono);border:1px solid #fde68a;margin-left:10px;}
+.modal-close{width:30px;height:30px;border-radius:6px;border:1px solid var(--border2);background:transparent;cursor:pointer;font-size:16px;color:var(--text2);display:flex;align-items:center;justify-content:center;transition:all .13s;}
+.modal-close:hover{background:var(--bg3);color:var(--text);}
+.modal-sub{font-size:12px;color:var(--text2);padding:10px 24px 0;flex-shrink:0;}
+.modal-tabs{display:flex;gap:5px;padding:12px 24px 0;flex-shrink:0;}
+.mtb{padding:5px 14px;font-size:12px;font-weight:500;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg3);color:var(--text2);cursor:pointer;font-family:var(--font);transition:all .13s;}
+.mtb:hover{background:var(--bg4);color:var(--text);}
+.mtb.active    {background:#eff6ff;color:var(--ca);border-color:#bfdbfe;}
+.mtb.ca.active {background:#eff6ff;color:var(--ca);border-color:#bfdbfe;}
+.mtb.hq.active {background:#f5f3ff;color:var(--hq);border-color:#ddd6fe;}
+.mtb.vn.active {background:#ecfdf5;color:var(--vn);border-color:#a7f3d0;}
+.modal-body{overflow-y:auto;padding:12px 24px 20px;flex:1;}
+.modal-tbl{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed;}
+.modal-tbl thead th{background:var(--bg3);color:var(--text2);font-weight:600;padding:7px 10px;text-align:left;border-bottom:1px solid var(--border2);font-size:10px;letter-spacing:.04em;text-transform:uppercase;position:sticky;top:0;}
+.modal-tbl tbody td{padding:8px 10px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle;}
+.modal-tbl tbody tr:last-child td{border-bottom:none;}
+.modal-tbl tbody tr:hover td{background:#f7f8fb;}
+.mz-sep td{background:var(--bg3);color:var(--text3);font-size:10px;font-weight:700;padding:5px 10px;letter-spacing:.06em;text-transform:uppercase;border-top:1px solid var(--border2);}
+.mc-no{width:52px;}.mc-z{width:48px;}.mc-nm{width:auto;}.mc-da{width:90px;}.mc-dp{width:90px;}.mc-dv{width:130px;}.mc-md{width:42px;text-align:center;}.mc-st{width:80px;}
+
+/* ── 모듈 탭 ── */
+.mod-tab-bar{display:flex;gap:0;background:var(--bg2);border-bottom:2px solid var(--border);
+  padding:0 28px;position:sticky;top:61px;z-index:200;display:none;}
+.mod-tab-bar.show{display:flex;}
+.mtab{display:flex;align-items:center;gap:6px;padding:10px 18px;font-size:13px;font-weight:500;
+  cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;
+  white-space:nowrap;transition:all .15s;color:var(--text2);user-select:none;}
+.mtab:hover{color:var(--text);background:var(--bg3);}
+.mtab.active{color:var(--mc);border-bottom-color:var(--mc);}
+.mtab .mcnt{font-size:10px;font-family:var(--mono);background:var(--bg3);
+  padding:1px 6px;border-radius:10px;color:var(--text3);}
+.mtab.active .mcnt{background:color-mix(in srgb,var(--mc) 15%,transparent);color:var(--mc);}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-l">
+    <span class="tag" id="hdrTag">SAP MODULE</span>
+    <div>
+      <div class="hdr-t">SAP 개발 진척 현황 대시보드</div>
+      <div class="hdr-s" id="hdrSub">SD · MM · PP · FI · CO · CM 모듈별 개발 진척 통합 관리</div>
+    </div>
+  </div>
+  <div class="hdr-r">
+    <div class="hdr-d" id="baseDate">기준일: —</div>
+    <label class="upload-zone" id="uploadLabel" for="fileInput">
+      <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6">
+        <path d="M4 14v2a1 1 0 001 1h10a1 1 0 001-1v-2M10 3v9M7 6l3-3 3 3"/>
+      </svg>
+      <span id="uploadText">엑셀 파일 업로드</span>
+    </label>
+    <input type="file" id="fileInput" accept=".xlsx,.xls">
+  </div>
+</div>
+
+<div class="parse-banner" id="parseBanner"><span id="bannerMsg"></span></div>
+
+
+<!-- ── 모듈 탭 ── -->
+<div class="mod-tab-bar" id="modTabBar">
+  <div class="mtab active" data-mod="ALL" style="--mc:#64748b" onclick="switchMod('ALL')">
+    <span>전체</span><span class="mcnt" id="mcnt-ALL">—</span>
+  </div>
+  <div class="mtab" data-mod="SD" style="--mc:#0ea5e9" onclick="switchMod('SD')">
+    <span>SD</span><span class="mcnt" id="mcnt-SD">—</span>
+  </div>
+  <div class="mtab" data-mod="MM" style="--mc:#8b5cf6" onclick="switchMod('MM')">
+    <span>MM</span><span class="mcnt" id="mcnt-MM">—</span>
+  </div>
+  <div class="mtab" data-mod="PP" style="--mc:#f59e0b" onclick="switchMod('PP')">
+    <span>PP</span><span class="mcnt" id="mcnt-PP">—</span>
+  </div>
+  <div class="mtab" data-mod="FI" style="--mc:#2563eb" onclick="switchMod('FI')">
+    <span>FI</span><span class="mcnt" id="mcnt-FI">—</span>
+  </div>
+  <div class="mtab" data-mod="CO" style="--mc:#059669" onclick="switchMod('CO')">
+    <span>CO</span><span class="mcnt" id="mcnt-CO">—</span>
+  </div>
+  <div class="mtab" data-mod="CM" style="--mc:#ec4899" onclick="switchMod('CM')">
+    <span>CM</span><span class="mcnt" id="mcnt-CM">—</span>
+  </div>
+</div>
+
+<div class="main">
+  <!-- EMPTY STATE -->
+  <div class="empty" id="emptyState">
+    <div class="empty-ico">📊</div>
+    <div class="empty-t">엑셀 파일을 업로드하면 대시보드가 자동으로 생성됩니다</div>
+    <div class="empty-s">우측 상단의 <strong>엑셀 파일 업로드</strong> 버튼을 클릭하거나 파일을 드래그하세요</div>
+    <div class="col-hint">
+      <strong>지원 파일 구조 — "FI" 시트 기준 자동 파싱</strong>
+      <div class="col-grid">
+        <span class="col-item">열2: 모듈 (FI)</span>
+        <span class="col-item">열3: Serial No</span>
+        <span class="col-item">열5: 적용범위 CA/HQ/VN</span>
+        <span class="col-item">열7: 개발 프로그램 제목</span>
+        <span class="col-item">열21: 설계 계획일</span>
+        <span class="col-item">열22: 설계 실적일</span>
+        <span class="col-item">열23: 난이도</span>
+        <span class="col-item">열24: 개발 공수 M/D</span>
+        <span class="col-item">열25: 개발자</span>
+        <span class="col-item">열26: 개발 계획일</span>
+        <span class="col-item">열27: 개발 실적일</span>
+      </div>
+      <div style="margin-top:10px;font-size:11px;color:var(--text3);">
+        ※ 데이터 시작 행은 자동으로 감지됩니다 (집계 행 다음부터 인식)
+      </div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dashboard" style="display:none;">
+    <p class="sec-ttl">전체 현황 요약</p>
+    <div class="kpi-grid" id="kpiGrid"></div>
+    <div class="prog-card" id="progCard"></div>
+    <p class="sec-ttl">분포 분석</p>
+    <div class="chart-grid">
+      <div class="cc">
+        <div class="cc-t">구분별 완료 / 잔여 (개)</div>
+        <div style="position:relative;height:190px"><canvas id="zoneBar" role="img" aria-label="구분별 완료 잔여"></canvas></div>
+        <div class="leg">
+          <span class="leg-i"><span class="leg-d" style="background:#059669"></span>완료</span>
+          <span class="leg-i"><span class="leg-d" style="background:#fca5a5"></span>잔여</span>
+        </div>
+      </div>
+      <div class="cc">
+        <div class="cc-t">잔여 M/D 구분별 분포</div>
+        <div style="position:relative;height:190px"><canvas id="mdDo" role="img" aria-label="잔여 M/D 분포"></canvas></div>
+        <div class="leg" id="mdLeg"></div>
+      </div>
+      <div class="cc">
+        <div class="cc-t">일정 상태별 M/D 분포 (구분별)</div>
+        <div style="position:relative;height:190px"><canvas id="stBar" role="img" aria-label="일정 상태별 M/D"></canvas></div>
+        <div class="leg">
+          <span class="leg-i"><span class="leg-d" style="background:#fca5a5"></span>마감초과</span>
+          <span class="leg-i"><span class="leg-d" style="background:#fcd34d"></span>위험</span>
+          <span class="leg-i"><span class="leg-d" style="background:#6ee7b7"></span>정상</span>
+          <span class="leg-i"><span class="leg-d" style="background:#d1d5db"></span>일정미정</span>
+        </div>
+      </div>
+    </div>
+    <div class="det">
+      <p class="sec-ttl" style="margin-bottom:13px;">잔여 프로그램 상세 — 일정 대비 공수 분석</p>
+      <div class="tab-bar" id="tabBar"></div>
+      <div class="sum-row" id="sumRow"></div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th class="cn">No</th><th class="cz">구분</th><th class="cm">프로그램명</th>
+            <th class="cd">개발계획일</th><th class="cmd">M/D</th>
+            <th class="cav">가용일수</th><th class="cgp">여유공수</th>
+            <th class="cst">상태</th><th class="cbr">공수 부하율</th>
+          </tr></thead>
+          <tbody id="mainTbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- 설계완료 후 미개발 모달 -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-hdr">
+      <div style="display:flex;align-items:center;">
+        <span class="modal-title">설계 완료 후 미개발 목록</span>
+        <span class="modal-badge" id="modalBadge">0개</span>
+      </div>
+      <button class="modal-close" onclick="closeModal()">&#x2715;</button>
+    </div>
+    <div class="modal-sub" id="modalSub"></div>
+    <div class="modal-tabs" id="modalTabs"></div>
+    <div class="modal-body">
+      <table class="modal-tbl">
+        <thead>
+          <tr>
+            <th class="mc-no">No</th>
+            <th class="mc-z">구분</th>
+            <th class="mc-nm">프로그램명</th>
+            <th class="mc-da">설계 완료일</th>
+            <th class="mc-dp">개발 계획일</th>
+            <th class="mc-dv">개발자</th>
+            <th class="mc-md">M/D</th>
+            <th class="mc-st">상태</th>
+          </tr>
+        </thead>
+        <tbody id="modalTbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<!-- 설계 미완료 모달 -->
+<div class="modal-overlay" id="modalOverlay2" onclick="closeModal2(event)">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-hdr">
+      <div style="display:flex;align-items:center;">
+        <span class="modal-title">설계 미완료 목록</span>
+        <span class="modal-badge" style="background:#eff6ff;color:#1e3a8a;border-color:#bfdbfe;" id="modalBadge2">0개</span>
+      </div>
+      <button class="modal-close" onclick="closeModal2()">&#x2715;</button>
+    </div>
+    <div class="modal-sub" id="modalSub2"></div>
+    <div class="modal-tabs" id="modalTabs2"></div>
+    <div class="modal-body">
+      <table class="modal-tbl">
+        <thead>
+          <tr>
+            <th class="mc-no">No</th>
+            <th class="mc-z">구분</th>
+            <th class="mc-nm">프로그램명</th>
+            <th class="mc-da">설계 계획일</th>
+            <th class="mc-dp">개발 계획일</th>
+            <th class="mc-dv">설계자</th>
+            <th class="mc-md">M/D</th>
+            <th class="mc-st">상태</th>
+          </tr>
+        </thead>
+        <tbody id="modalTbody2"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="footer" id="footer">FI MODULE DEV DASHBOARD &nbsp;·&nbsp; 엑셀 파일을 업로드하면 데이터가 갱신됩니다</div>
+
+<script>
+// ── 상수 ──────────────────────────────────────────────
+const DEADLINE = new Date('2026-05-31');
+const WARN_DT  = new Date('2026-05-14');
+const MODS     = ['SD','MM','PP','FI','CO','CM'];
+const MOD_COLOR= {ALL:'#64748b',SD:'#0ea5e9',MM:'#8b5cf6',PP:'#f59e0b',FI:'#2563eb',CO:'#059669',CM:'#ec4899'};
+
+// 기본 컬럼 인덱스 (B열 기준, 0-based)
+// 실제 파싱 시 시트별 offset을 감지해서 더함
+const BASE_C = {
+  mod:1, serial:2, zone:4, name:6,
+  designer:19, designP:20, designA:21, diff:22, md:23,
+  devWho:24, devPlan:25, devAct:26
+};
+
+let G = { modData:{}, today:new Date(), curMod:'ALL' };
+const charts = {};
+
+// ── 날짜 유틸 ─────────────────────────────────────────
+function excelDateToJS(v){
+  if(v instanceof Date) return v;
+  if(typeof v === 'number' && v > 1) return new Date(Math.round((v - 25569) * 864e5));
+  if(typeof v === 'string'){
+    const s = v.replace(/\s/g,''), c = s.replace(/-/g,'');
+    if(c.length===8) return new Date(+c.slice(0,4),+c.slice(4,6)-1,+c.slice(6,8));
+  }
+  return null;
+}
+function fmtDate(v){
+  const d = excelDateToJS(v);
+  if(!d || isNaN(d)) return '';
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function workdays(from, to){
+  if(!from||!to||to<from) return 0;
+  let n=0, d=new Date(from); d.setHours(0,0,0,0);
+  const t=new Date(to); t.setHours(0,0,0,0);
+  while(d<=t){ const w=d.getDay(); if(w&&w!==6)n++; d.setDate(d.getDate()+1); }
+  return n;
+}
+function getStatus(planDate, md, today){
+  const p = excelDateToJS(planDate);
+  if(!p||isNaN(p)) return {lbl:'일정미정',cls:'b-none',col:'#9ea3b5',s:3};
+  if(p > DEADLINE)  return {lbl:'정상',    cls:'b-ok',  col:'#059669',s:2};
+  const av = workdays(today, p);
+  if(av < md)       return {lbl:'마감초과', cls:'b-over',col:'#dc2626',s:0};
+  if(p > WARN_DT)   return {lbl:'위험',     cls:'b-risk',col:'#d97706',s:1};
+  return {lbl:'정상',cls:'b-ok',col:'#059669',s:2};
+}
+function killChart(id){ if(charts[id]){charts[id].destroy();delete charts[id];} }
+
+// ── 파일 업로드 ────────────────────────────────────────
+document.getElementById('fileInput').addEventListener('change', function(e){
+  const file = e.target.files[0]; if(file) readFile(file);
+});
+document.addEventListener('dragover', e => e.preventDefault());
+document.addEventListener('drop', function(e){
+  e.preventDefault();
+  const file = Array.from(e.dataTransfer.files).find(f => f.name.match(/\.xlsx?$/i));
+  if(file){ try{ const dt=new DataTransfer(); dt.items.add(file); document.getElementById('fileInput').files=dt.files; }catch(e){} readFile(file); }
+});
+function readFile(file){
+  showBanner('ok', `"${file.name}" 읽는 중...`);
+  const reader = new FileReader();
+  reader.onload = function(ev){
+    try{
+      const wb = XLSX.read(ev.target.result, {type:'array', cellDates:false, raw:true});
+      parseAll(wb, file.name);
+    }catch(err){ showBanner('err', '파일 읽기 실패: ' + err.message); }
+  };
+  reader.readAsArrayBuffer(file);
+}
+function showBanner(type, msg){
+  const el = document.getElementById('parseBanner');
+  el.className = 'parse-banner ' + (type==='err'?'err':'ok');
+  document.getElementById('bannerMsg').textContent = msg;
+}
+
+// ── 열 오프셋 자동 감지 ────────────────────────────────
+// SheetJS header:1 에서 시트마다 A열 존재 여부에 따라 배열 시작 인덱스가 달라짐
+// → 모듈명(SD/MM/...)이 있는 행을 찾아 실제 인덱스를 감지한 뒤
+//    BASE_C 기준 오프셋을 보정
+function detectOffset(raw, mod){
+  // 처음 30행에서 모듈명과 일치하는 셀 위치 탐색
+  for(let i=0; i<Math.min(raw.length, 30); i++){
+    const row = raw[i];
+    for(let j=0; j<Math.min(row.length, 5); j++){
+      const v = String(row[j]||'').replace(/'/g,'').trim().toUpperCase();
+      if(v === mod){
+        // BASE_C.mod = 1 이므로 offset = j - 1
+        return j - BASE_C.mod;
+      }
+    }
+  }
+  return 0; // 못 찾으면 기본값
+}
+
+// ── 모든 모듈 시트 파싱 ───────────────────────────────
+function parseAll(wb, fileName){
+  const today = new Date(); today.setHours(0,0,0,0);
+  const modData = {};
+  const found   = [];
+
+  MODS.forEach(mod => {
+    if(!wb.SheetNames.includes(mod)) return;
+
+    const ws  = wb.Sheets[mod];
+    const raw = XLSX.utils.sheet_to_json(ws, {header:1, defval:'', raw:true});
+
+    // 열 오프셋 자동 감지
+    const offset = detectOffset(raw, mod);
+
+    // 실제 컬럼 인덱스 = BASE_C + offset
+    const C = {};
+    for(const k in BASE_C) C[k] = BASE_C[k] + offset;
+
+    // 집계행('계') 탐색 — 행 수 제한 없음
+    let dataStart = -1;
+    for(let i=0; i<raw.length; i++){
+      const cell = String(raw[i][C.mod]||'').replace(/'/g,'').trim();
+      if(cell === '계'){ dataStart = i+1; break; }
+    }
+    // 집계행 못 찾으면 모듈명 첫 행부터
+    if(dataStart === -1){
+      for(let i=0; i<raw.length; i++){
+        const cell = String(raw[i][C.mod]||'').replace(/'/g,'').trim().toUpperCase();
+        if(cell === mod){ dataStart = i; break; }
+      }
+    }
+    if(dataStart === -1) return;
+
+    const rows = [];
+    for(let i=dataStart; i<raw.length; i++){
+      const r   = raw[i];
+      const mv  = String(r[C.mod]||'').replace(/'/g,'').trim().toUpperCase();
+      if(mv !== mod) continue;
+
+      const serial = String(r[C.serial]||'').replace(/'/g,'').trim();
+      const name   = String(r[C.name]  ||'').replace(/'/g,'').trim();
+      if(!serial || !name) continue;
+
+      const zone  = String(r[C.zone]||'').replace(/'/g,'').trim().toUpperCase();
+      const mdRaw = r[C.md];
+      const md    = (mdRaw !== '' && !isNaN(Number(mdRaw))) ? Number(mdRaw) : 0;
+
+      rows.push({
+        no:         serial.replace(/'/g,'').padStart(4,'0'),
+        mod, zone, name, md,
+        designer:   String(r[C.designer]||'').replace(/'/g,'').trim(),
+        designPRaw: r[C.designP], designARaw: r[C.designA],
+        designP:    fmtDate(r[C.designP]), designA: fmtDate(r[C.designA]),
+        diff:       String(r[C.diff]||'').replace(/'/g,'').trim(),
+        devWho:     String(r[C.devWho]||'').replace(/'/g,'').trim(),
+        devPlanRaw: r[C.devPlan], devActRaw: r[C.devAct],
+        devPlan:    fmtDate(r[C.devPlan]), devAct: fmtDate(r[C.devAct]),
+      });
+    }
+
+    if(rows.length){ modData[mod] = rows; found.push(mod); }
+  });
+
+  if(!found.length){ showBanner('err', 'SD/MM/PP/FI/CO/CM 시트를 찾을 수 없습니다.'); return; }
+
+  G = { modData, today, curMod:'ALL' };
+  const total    = found.reduce((s,m) => s + modData[m].length, 0);
+  const todayStr = fmtDate(today) || today.toISOString().slice(0,10);
+
+  showBanner('ok', `✓ "${fileName}" 파싱 완료 — ${found.join('+')} ${total}개 프로그램 · 기준일: ${todayStr}`);
+  document.getElementById('baseDate').textContent = `기준일: ${todayStr}`;
+  document.getElementById('uploadText').textContent = fileName.length>22 ? fileName.slice(0,20)+'…' : fileName;
+  document.getElementById('uploadLabel').classList.add('loaded');
+
+  let allCnt = 0;
+  MODS.forEach(m => {
+    const cnt = (modData[m]||[]).length;
+    document.getElementById('mcnt-'+m).textContent = cnt ? cnt+'개' : '—';
+    allCnt += cnt;
+  });
+  document.getElementById('mcnt-ALL').textContent = allCnt+'개';
+  document.getElementById('modTabBar').classList.add('show');
+  document.getElementById('emptyState').style.display = 'none';
+  document.getElementById('dashboard').style.display  = 'block';
+
+  switchMod('ALL');
+}
+
+// ── 모듈 탭 전환 ──────────────────────────────────────
+function switchMod(mod){
+  G.curMod = mod;
+  document.querySelectorAll('.mtab').forEach(t =>
+    t.classList.toggle('active', t.dataset.mod === mod)
+  );
+  const c   = MOD_COLOR[mod];
+  const tag = document.getElementById('hdrTag');
+  tag.textContent  = mod === 'ALL' ? 'ALL MODULES' : mod + ' MODULE';
+  tag.style.background  = c+'18';
+  tag.style.color       = c;
+  tag.style.borderColor = c+'44';
+
+  const data = mod === 'ALL'
+    ? Object.values(G.modData).flat()
+    : (G.modData[mod] || []);
+
+  renderDashboard(data, G.today, mod);
+}
+
+// ── 대시보드 렌더 ─────────────────────────────────────
+function renderDashboard(data, today, mod){
+  if(!data.length){
+    document.getElementById('dashboard').innerHTML =
+      '<div style="text-align:center;padding:60px;color:var(--text3);">해당 모듈 데이터가 없습니다</div>';
+    document.getElementById('footer').textContent =
+      `SAP DEV DASHBOARD · 기준일 ${G.today.toISOString().slice(0,10)}`;
+    return;
+  }
+
+  const total    = data.length;
+  const dsDone   = data.filter(r=>r.designA).length;
+  const devDone  = data.filter(r=>r.devAct).length;
+  const remain   = data.filter(r=>!r.devAct);
+  const remainMD = remain.reduce((s,r)=>s+r.md, 0);
+  const dlDays   = workdays(today, DEADLINE);
+  const zones    = [...new Set(data.map(r=>r.zone))].filter(Boolean).sort();
+
+  const zStat = {};
+  zones.forEach(z=>{
+    const zr = data.filter(r=>r.zone===z);
+    zStat[z] = {
+      total:      zr.length,
+      devDone:    zr.filter(r=>r.devAct).length,
+      remain:     zr.filter(r=>!r.devAct),
+      remainMD:   zr.filter(r=>!r.devAct).reduce((s,r)=>s+r.md, 0),
+      designDone: zr.filter(r=>r.designA).length,
+    };
+  });
+
+  const modColor = MOD_COLOR[mod] || '#2563eb';
+
+  renderKPI(total, dsDone, devDone, remain.length, remainMD, dlDays, mod, modColor);
+  renderProgress(total, dsDone, devDone, zStat, zones, remain, mod, modColor);
+  renderCharts(zStat, zones, remain, today);
+  renderTabs(zones, zStat, remain);
+  setZone('ALL');
+
+  document.getElementById('footer').textContent =
+    `SAP DEV DASHBOARD · 기준일 ${G.today.toISOString().slice(0,10)} · 통합테스트 2026-05-18 · 개발마감 2026-05-31`;
+}
+
+function renderKPI(total, dsDone, devDone, remCnt, remMD, dlDays, mod, modColor){
+  const dp  = (devDone/total*100).toFixed(1);
+  const dsp = (dsDone/total*100).toFixed(1);
+  const dvd = dsDone>0 ? (devDone/dsDone*100).toFixed(1) : 0;
+  const modLbl = mod==='ALL' ? '전체 모듈' : mod+' 모듈';
+  document.getElementById('kpiGrid').innerHTML=`
+    <div class="kpi"><div class="kpi-lbl">전체 프로그램</div>
+      <div class="kpi-val">${total}</div><div class="kpi-sub">${modLbl}</div>
+      <div class="kpi-bw"><div class="kpi-bf" style="width:100%;background:#d1d5db"></div></div></div>
+    <div class="kpi"><div class="kpi-lbl">설계 완료</div>
+      <div class="kpi-val" style="color:var(--ca)">${dsDone}</div>
+      <div class="kpi-sub">${dsp}% (전체 기준)</div>
+      <div class="kpi-bw"><div class="kpi-bf" style="width:${dsp}%;background:var(--ca)"></div></div></div>
+    <div class="kpi"><div class="kpi-lbl">개발 완료</div>
+      <div class="kpi-val" style="color:${modColor}">${devDone}</div>
+      <div class="kpi-sub">${dp}% (전체) · ${dvd}% (설계기준)</div>
+      <div class="kpi-bw"><div class="kpi-bf" style="width:${dp}%;background:${modColor}"></div></div></div>
+    <div class="kpi"><div class="kpi-lbl">잔여 프로그램</div>
+      <div class="kpi-val" style="color:var(--over)">${remCnt}</div>
+      <div class="kpi-sub">개발 실적 미등록</div>
+      <div class="kpi-bw"><div class="kpi-bf" style="width:${(remCnt/total*100).toFixed(1)}%;background:var(--over)"></div></div></div>
+    <div class="kpi"><div class="kpi-lbl">잔여 추정 M/D</div>
+      <div class="kpi-val" style="color:var(--risk)">${remMD}</div>
+      <div class="kpi-sub">난이도 기반 합산</div>
+      <div class="kpi-bw"><div class="kpi-bf" style="width:${Math.min(100,remMD/2)}%;background:var(--risk)"></div></div></div>
+    <div class="kpi"><div class="kpi-lbl">마감까지 남은 일</div>
+      <div class="kpi-val" style="color:${dlDays<20?'var(--over)':dlDays<35?'var(--risk)':'var(--ok)'}">${dlDays}</div>
+      <div class="kpi-sub">영업일 (~ 2026-05-31)</div>
+      <div class="kpi-bw"><div class="kpi-bf" style="width:${Math.min(100,dlDays/60*100)}%;background:var(--risk)"></div></div></div>`;
+}
+
+function renderProgress(total, dsDone, devDone, zStat, zones, remain, mod, modColor){
+  const dp  = (devDone/total*100).toFixed(1);
+  const dvd = dsDone>0 ? (devDone/dsDone*100).toFixed(1) : 0;
+  const zColors = {CA:'var(--ca)',HQ:'var(--hq)',VN:'var(--vn)'};
+  const zRows = zones.map(z=>{
+    const s=zStat[z]; const p=(s.devDone/s.total*100).toFixed(1);
+    const zLabel = z==='CA'?'공통':z==='HQ'?'본사':z==='VN'?'베트남':z;
+    return `<div class="pr">
+      <div class="pr-hd">
+        <span class="pr-lbl" style="color:${zColors[z]||modColor}">${z} (${zLabel})</span>
+        <span class="pr-num">${s.devDone} / ${s.total}개 완료 &nbsp;·&nbsp; 잔여 ${s.remain.length}개 · ${s.remainMD} M/D</span>
+      </div>
+      <div class="pr-trk"><div class="pr-fill" style="width:${p}%;background:${zColors[z]||modColor}"></div></div>
+      <div class="pr-pct">${p}%</div></div>`;
+  }).join('');
+
+  document.getElementById('progCard').innerHTML=`
+    <p class="sec-ttl" style="margin-bottom:16px;">구분별 개발 진행률</p>
+    <div class="pr">
+      <div class="pr-hd">
+        <span class="pr-lbl">전체 프로그램 대비 개발 완료율</span>
+        <span class="pr-num">${devDone} / ${total}개 &nbsp;·&nbsp; ${dp}%</span>
+      </div>
+      <div class="pr-trk"><div class="pr-fill" style="width:${dp}%;background:${modColor}"></div></div>
+      <div class="pr-pct">전체 ${total}개 프로그램 중 개발 실적이 등록된 비율</div>
+    </div>
+    <div class="pr-hi">
+      <div class="pr-hd">
+        <span class="pr-lbl">설계 완료 대비 개발 완료율
+          <span style="font-size:11px;font-weight:400;color:var(--text2);margin-left:8px;">설계 실적 있는 ${dsDone}개 중 개발까지 완료한 비율</span>
+        </span>
+        <span class="pr-num">${devDone} / ${dsDone}개 &nbsp;·&nbsp; ${dvd}%</span>
+      </div>
+      <div class="pr-trk"><div class="pr-fill" style="width:${dvd}%;background:#d97706"></div></div>
+      <div class="pr-pct">설계 완료 후 미개발: <span class="drill-link" onclick="openModal()">${dsDone-devDone}개</span> &nbsp;/&nbsp; 설계 미완료: <span class="drill-link" style="color:#1e3a8a;border-bottom-color:#2563eb;" onclick="openNoDesignModal()">${total-dsDone}개</span></div>
+    </div>
+    <div class="divider"></div>
+    ${zRows}
+    <div class="divider"></div>
+    <div class="pr">
+      <div class="pr-hd">
+        <span class="pr-lbl" style="color:var(--ca)">설계 완료율 (전체 기준)</span>
+        <span class="pr-num">${dsDone} / ${total}개 &nbsp;·&nbsp; ${(dsDone/total*100).toFixed(1)}%</span>
+      </div>
+      <div class="pr-trk"><div class="pr-fill" style="width:${dsDone/total*100}%;background:var(--ca)"></div></div>
+      <div class="pr-pct">${(dsDone/total*100).toFixed(1)}%</div>
+    </div>`;
+}
+
+function renderCharts(zStat, zones, remain, today){
+  const gC='rgba(0,0,0,0.05)', tC='#9ea3b5';
+  const cOpt=()=>({responsive:true,maintainAspectRatio:false,
+    scales:{x:{stacked:true,grid:{color:gC},ticks:{color:tC,font:{size:11}}},
+            y:{stacked:true,grid:{color:gC},ticks:{color:tC,font:{size:11}}}},
+    plugins:{legend:{display:false}}});
+  const zC={CA:'#2563eb',HQ:'#7c3aed',VN:'#059669'};
+
+  killChart('zoneBar');
+  charts['zoneBar']=new Chart(document.getElementById('zoneBar'),{type:'bar',
+    data:{labels:zones,datasets:[
+      {label:'완료',data:zones.map(z=>zStat[z].devDone),backgroundColor:'#059669'},
+      {label:'잔여',data:zones.map(z=>zStat[z].remain.length),backgroundColor:'#fca5a5'}]},
+    options:cOpt()});
+
+  const mdData  = zones.map(z=>zStat[z].remainMD);
+  const mdColors= zones.map(z=>zC[z]||'#9ea3b5');
+  killChart('mdDo');
+  charts['mdDo']=new Chart(document.getElementById('mdDo'),{type:'doughnut',
+    data:{labels:zones.map((z,i)=>`${z} (${mdData[i]})`),
+      datasets:[{data:mdData,backgroundColor:mdColors,borderWidth:2,borderColor:'#fff',hoverOffset:4}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{display:false}}}});
+  document.getElementById('mdLeg').innerHTML=zones.map((z,i)=>
+    `<span class="leg-i"><span class="leg-d" style="background:${mdColors[i]}"></span>${z} ${mdData[i]}</span>`).join('');
+
+  function stMD(z){
+    const rows=z==='ALL'?remain:remain.filter(r=>r.zone===z);
+    let ov=0,ri=0,ok=0,no=0;
+    rows.forEach(r=>{const s=getStatus(r.devPlanRaw,r.md,today);
+      if(s.s===0)ov+=r.md;else if(s.s===1)ri+=r.md;else if(s.s===2)ok+=r.md;else no+=r.md;});
+    return[ov,ri,ok,no];
+  }
+  killChart('stBar');
+  charts['stBar']=new Chart(document.getElementById('stBar'),{type:'bar',
+    data:{labels:zones,datasets:[
+      {label:'마감초과',data:zones.map(z=>stMD(z)[0]),backgroundColor:'#fca5a5'},
+      {label:'위험',    data:zones.map(z=>stMD(z)[1]),backgroundColor:'#fcd34d'},
+      {label:'정상',    data:zones.map(z=>stMD(z)[2]),backgroundColor:'#6ee7b7'},
+      {label:'일정미정',data:zones.map(z=>stMD(z)[3]),backgroundColor:'#d1d5db'}]},
+    options:cOpt()});
+}
+
+function renderTabs(zones, zStat, remain){
+  const tmd=remain.reduce((s,r)=>s+r.md,0);
+  let html=`<button class="tb active" onclick="setZone('ALL')">전체 (${remain.length}개 · ${tmd} M/D)</button>`;
+  zones.forEach(z=>{
+    const s=zStat[z]; const cls=z.toLowerCase();
+    html+=`<button class="tb ${cls}" onclick="setZone('${z}')">${z} — ${s.remain.length}개 · ${s.remainMD} M/D</button>`;
+  });
+  document.getElementById('tabBar').innerHTML=html;
+}
+
+function setZone(z){
+  document.querySelectorAll('#tabBar .tb').forEach(b=>{
+    const t=b.textContent;
+    b.classList.toggle('active',(z==='ALL'&&t.startsWith('전체'))||t.startsWith(z));
+  });
+  const curData = G.curMod==='ALL'
+    ? Object.values(G.modData).flat()
+    : (G.modData[G.curMod]||[]);
+  const remain = curData.filter(r=>!r.devAct);
+  const rows   = z==='ALL' ? remain : remain.filter(r=>r.zone===z);
+  renderSummary(rows);
+  renderTable(rows, z, curData);
+}
+
+function renderSummary(rows){
+  const tot=rows.length, tmd=rows.reduce((s,r)=>s+r.md,0);
+  let ov=0,ri=0,ok=0,no=0;
+  rows.forEach(r=>{const s=getStatus(r.devPlanRaw,r.md,G.today);
+    if(s.s===0)ov++;else if(s.s===1)ri++;else if(s.s===2)ok++;else no++;});
+  document.getElementById('sumRow').innerHTML=`
+    <div class="sc"><div class="sc-lbl">잔여 프로그램</div>
+      <div class="sc-val">${tot}<span style="font-size:12px;font-weight:400;color:var(--text2)"> 개</span></div>
+      <div class="sc-sub">총 ${tmd} M/D</div></div>
+    <div class="sc"><div class="sc-lbl">정상</div>
+      <div class="sc-val" style="color:#065f46">${ok}<span style="font-size:12px;font-weight:400;color:var(--text2)"> 개</span></div>
+      <div class="sc-sub">마감일 전 · 공수 여유 있음</div></div>
+    <div class="sc"><div class="sc-lbl">위험</div>
+      <div class="sc-val" style="color:#92400e">${ri}<span style="font-size:12px;font-weight:400;color:var(--text2)"> 개</span></div>
+      <div class="sc-sub">5월 중순 이후</div></div>
+    <div class="sc"><div class="sc-lbl">마감초과 / 미정</div>
+      <div class="sc-val" style="color:#b91c1c">${ov+no}<span style="font-size:12px;font-weight:400;color:var(--text2)"> 개</span></div>
+      <div class="sc-sub">6월 이후 또는 일정 미정</div></div>`;
+}
+
+function renderTable(rows, zone, curData){
+  const allZones = [...new Set(curData.map(r=>r.zone))].filter(Boolean).sort();
+  const zones    = zone==='ALL' ? allZones : [zone];
+  const zc = {CA:'var(--ca)',HQ:'var(--hq)',VN:'var(--vn)'};
+  let html='';
+  zones.forEach(z=>{
+    const zr=rows.filter(r=>r.zone===z);
+    if(!zr.length) return;
+    const zm=zr.reduce((s,r)=>s+r.md,0);
+    html+=`<tr class="z-sep"><td colspan="9" style="color:${zc[z]||'var(--text2)'}">${z} — ${zr.length}개 / ${zm} M/D</td></tr>`;
+    zr.forEach(r=>{
+      const dp  = excelDateToJS(r.devPlanRaw);
+      const av  = dp&&!isNaN(dp) ? workdays(G.today,dp) : null;
+      const gap = av!==null ? av-r.md : null;
+      const st  = getStatus(r.devPlanRaw,r.md,G.today);
+      const pct = av ? Math.min(100,Math.round((r.md/Math.max(av,1))*100)) : 100;
+      const gt  = gap===null ? '—' : (gap>=0?'+'+gap+'일':gap+'일');
+      const gc  = gap===null ? 'var(--text3)' : (gap<0?'#b91c1c':'#065f46');
+      const ztc = z==='CA'?'zt-ca':z==='HQ'?'zt-hq':'zt-vn';
+      html+=`<tr>
+        <td class="cn mono" style="color:var(--text3)">${r.no}</td>
+        <td class="cz"><span class="zt ${ztc}">${z}</span></td>
+        <td class="cm">${r.name}</td>
+        <td class="cd mono" style="color:var(--text2);font-size:11px">${r.devPlan||'미정'}</td>
+        <td class="cmd mono" style="text-align:center;font-weight:600">${r.md||'—'}</td>
+        <td class="cav mono" style="text-align:center;color:var(--text2)">${av!==null?av+'일':'—'}</td>
+        <td class="cgp mono" style="text-align:center;font-weight:600;color:${gc}">${gt}</td>
+        <td class="cst"><span class="bdg ${st.cls}">${st.lbl}</span></td>
+        <td class="cbr"><div class="bc"><div class="bf" style="width:${pct}%;background:${st.col}"></div></div></td>
+      </tr>`;
+    });
+  });
+  document.getElementById('mainTbody').innerHTML = html ||
+    '<tr><td colspan="9" style="text-align:center;padding:24px;color:var(--text3);">잔여 프로그램이 없습니다</td></tr>';
+}
+
+// ── 현재 모듈 데이터 ──────────────────────────────────
+function getCurData(){
+  return G.curMod==='ALL'
+    ? Object.values(G.modData).flat()
+    : (G.modData[G.curMod]||[]);
+}
+
+// ── 설계완료 후 미개발 모달 ────────────────────────────
+function openModal(zone){
+  zone = zone || 'ALL';
+  document.getElementById('modalOverlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  renderModalTabs(zone);
+  renderModalTable(zone);
+}
+function closeModal(e){
+  if(e && e.target !== document.getElementById('modalOverlay')) return;
+  document.getElementById('modalOverlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function getDesignedNotDev(){
+  return getCurData()
+    .filter(r => r.designA && !r.devAct)
+    .sort((a,b)=>{
+      const da=excelDateToJS(a.devPlanRaw), db=excelDateToJS(b.devPlanRaw);
+      if(!da&&!db)return 0; if(!da)return 1; if(!db)return -1; return da-db;
+    });
+}
+function renderModalTabs(zone){
+  const all   = getDesignedNotDev();
+  const zones = [...new Set(getCurData().map(r=>r.zone))].filter(Boolean).sort();
+  const tmd   = all.reduce((s,r)=>s+r.md,0);
+  document.getElementById('modalBadge').textContent = all.length+'개';
+  document.getElementById('modalSub').textContent =
+    '설계 실적 완료 후 개발 미착수 · 총 '+tmd+' M/D · 개발 계획일 기준 정렬';
+  let html=`<button class="mtb active" onclick="renderModalTable('ALL');setModalTab(this)">전체 (${all.length}개)</button>`;
+  zones.forEach(z=>{
+    const cnt=all.filter(r=>r.zone===z).length;
+    if(!cnt)return;
+    html+=`<button class="mtb ${z.toLowerCase()}" onclick="renderModalTable('${z}');setModalTab(this)">${z} — ${cnt}개</button>`;
+  });
+  document.getElementById('modalTabs').innerHTML=html;
+}
+function setModalTab(btn){
+  document.querySelectorAll('#modalTabs .mtb').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function renderModalTable(zone){
+  const all   = getDesignedNotDev();
+  const rows  = zone==='ALL' ? all : all.filter(r=>r.zone===zone);
+  const zones = zone==='ALL' ? [...new Set(rows.map(r=>r.zone))].filter(Boolean).sort() : [zone];
+  const zc    = {CA:'var(--ca)',HQ:'var(--hq)',VN:'var(--vn)'};
+  let html='';
+  zones.forEach(z=>{
+    const zr=rows.filter(r=>r.zone===z);
+    if(!zr.length)return;
+    const zm=zr.reduce((s,r)=>s+r.md,0);
+    html+=`<tr class="mz-sep"><td colspan="8" style="color:${zc[z]||'var(--text2)'}">${z} — ${zr.length}개 / ${zm} M/D</td></tr>`;
+    zr.forEach(r=>{
+      const st=getStatus(r.devPlanRaw,r.md,G.today);
+      const ztc=z==='CA'?'zt-ca':z==='HQ'?'zt-hq':'zt-vn';
+      const doneDate=excelDateToJS(r.designARaw);
+      const elapsed=doneDate?workdays(doneDate,G.today):null;
+      const elapsedTxt=elapsed!==null?`<span style="font-size:10px;color:${elapsed>10?'#dc2626':'#d97706'};font-family:var(--mono);">${elapsed}일 경과</span>`:'';
+      html+=`<tr>
+        <td class="mc-no mono" style="color:var(--text3)">${r.no}</td>
+        <td class="mc-z"><span class="zt ${ztc}">${z}</span></td>
+        <td class="mc-nm">${r.name}<div style="margin-top:2px;">${elapsedTxt}</div></td>
+        <td class="mc-da mono" style="color:var(--text2);font-size:11px">${r.designA||'—'}</td>
+        <td class="mc-dp mono" style="font-size:11px;color:${r.devPlan?'var(--text)':'var(--text3)'}">${r.devPlan||'미정'}</td>
+        <td class="mc-dv" style="font-size:11px;color:var(--text2)">${r.devWho||'—'}</td>
+        <td class="mc-md mono" style="text-align:center;font-weight:600">${r.md||'—'}</td>
+        <td class="mc-st"><span class="bdg ${st.cls}">${st.lbl}</span></td>
+      </tr>`;
+    });
+  });
+  if(!html) html='<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text3);">해당 항목이 없습니다</td></tr>';
+  document.getElementById('modalTbody').innerHTML=html;
+}
+
+// ── 설계 미완료 모달 ───────────────────────────────────
+function openNoDesignModal(zone){
+  zone = zone || 'ALL';
+  document.getElementById('modalOverlay2').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  renderNoDesignTabs(zone);
+  renderNoDesignTable(zone);
+}
+function closeModal2(e){
+  if(e && e.target !== document.getElementById('modalOverlay2')) return;
+  document.getElementById('modalOverlay2').classList.remove('open');
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', function(e){
+  if(e.key==='Escape'){ closeModal(); closeModal2(); }
+});
+function getNoDesign(){
+  return getCurData()
+    .filter(r => !r.designA)
+    .sort((a,b)=>{
+      const da=excelDateToJS(a.devPlanRaw), db=excelDateToJS(b.devPlanRaw);
+      if(!da&&!db)return 0; if(!da)return 1; if(!db)return -1; return da-db;
+    });
+}
+function renderNoDesignTabs(activeZone){
+  const all   = getNoDesign();
+  const zones = [...new Set(getCurData().map(r=>r.zone))].filter(Boolean).sort();
+  const tmd   = all.reduce((s,r)=>s+r.md,0);
+  document.getElementById('modalBadge2').textContent = all.length+'개';
+  document.getElementById('modalSub2').textContent =
+    '설계 실적이 없는 프로그램 · 총 '+tmd+' M/D · 설계 계획일 D-Day 표시 · 개발 계획일 기준 정렬';
+  let html=`<button class="mtb active" style="background:#eff6ff;color:var(--ca);border-color:#bfdbfe;" onclick="renderNoDesignTable('ALL');setModalTab2(this)">전체 (${all.length}개)</button>`;
+  zones.forEach(z=>{
+    const cnt=all.filter(r=>r.zone===z).length;
+    if(!cnt)return;
+    html+=`<button class="mtb ${z.toLowerCase()}" onclick="renderNoDesignTable('${z}');setModalTab2(this)">${z} — ${cnt}개</button>`;
+  });
+  document.getElementById('modalTabs2').innerHTML=html;
+}
+function setModalTab2(btn){
+  document.querySelectorAll('#modalTabs2 .mtb').forEach(b=>{
+    b.classList.remove('active'); b.style.background=''; b.style.color=''; b.style.borderColor='';
+  });
+  btn.classList.add('active');
+}
+function renderNoDesignTable(zone){
+  const all   = getNoDesign();
+  const rows  = zone==='ALL' ? all : all.filter(r=>r.zone===zone);
+  const zones = zone==='ALL' ? [...new Set(rows.map(r=>r.zone))].filter(Boolean).sort() : [zone];
+  const zc    = {CA:'var(--ca)',HQ:'var(--hq)',VN:'var(--vn)'};
+  let html='';
+  zones.forEach(z=>{
+    const zr=rows.filter(r=>r.zone===z);
+    if(!zr.length)return;
+    const zm=zr.reduce((s,r)=>s+r.md,0);
+    html+=`<tr class="mz-sep"><td colspan="8" style="color:${zc[z]||'var(--text2)'}">${z} — ${zr.length}개 / ${zm} M/D</td></tr>`;
+    zr.forEach(r=>{
+      const st=getStatus(r.devPlanRaw,r.md,G.today);
+      const ztc=z==='CA'?'zt-ca':z==='HQ'?'zt-hq':'zt-vn';
+      const planDate=excelDateToJS(r.designPRaw);
+      let dDayTxt='';
+      if(planDate&&!isNaN(planDate)){
+        const todayMid=new Date(G.today); todayMid.setHours(0,0,0,0);
+        const planMid=new Date(planDate); planMid.setHours(0,0,0,0);
+        if(planMid<todayMid){
+          dDayTxt=`<span style="font-size:10px;color:#dc2626;font-family:var(--mono);">${workdays(planMid,todayMid)-1}일 지연</span>`;
+        } else if(planMid.getTime()===todayMid.getTime()){
+          dDayTxt=`<span style="font-size:10px;color:#d97706;font-family:var(--mono);">오늘 마감</span>`;
+        } else {
+          dDayTxt=`<span style="font-size:10px;color:#059669;font-family:var(--mono);">D-${workdays(todayMid,planMid)-1}</span>`;
+        }
+      }
+      html+=`<tr>
+        <td class="mc-no mono" style="color:var(--text3)">${r.no}</td>
+        <td class="mc-z"><span class="zt ${ztc}">${z}</span></td>
+        <td class="mc-nm">${r.name}<div style="margin-top:2px;">${dDayTxt}</div></td>
+        <td class="mc-da mono" style="font-size:11px;color:${r.designP?'var(--text)':'var(--text3)'}">${r.designP||'미정'}</td>
+        <td class="mc-dp mono" style="font-size:11px;color:${r.devPlan?'var(--text)':'var(--text3)'}">${r.devPlan||'미정'}</td>
+        <td class="mc-dv" style="font-size:11px;color:var(--text2)">${r.devWho||'—'}</td>
+        <td class="mc-md mono" style="text-align:center;font-weight:600">${r.md||'—'}</td>
+        <td class="mc-st"><span class="bdg ${st.cls}">${st.lbl}</span></td>
+      </tr>`;
+    });
+  });
+  if(!html) html='<tr><td colspan="8" style="text-align:center;padding:32px;color:var(--text3);">해당 항목이 없습니다</td></tr>';
+  document.getElementById('modalTbody2').innerHTML=html;
+}
+</script>
+</body>
+</html>
