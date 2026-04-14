@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Claude AI × SAP Fiori 개발</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --blue:#0070f3; --blue-d:#0057c2; --blue-l:#e8f0fe;
+  --purple:#7c3aed; --green:#059669; --amber:#d97706; --red:#dc2626;
+  --gray-1:#f8f9fa; --gray-2:#e9ecef; --gray-3:#dee2e6;
+  --gray-6:#6c757d; --gray-8:#343a40; --gray-9:#212529;
+  --text:#18191f; --mono:'DM Mono',monospace;
+  --font:'Noto Sans KR',sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; height: 100%; background: #0a0b0f; font-family: var(--font); overflow: hidden; }
+
+/* ── 슬라이드 컨테이너 ── */
+.deck { width: 100vw; height: 100vh; position: relative; }
+.slide {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  padding: 60px 80px;
+  opacity: 0; pointer-events: none;
+  transition: opacity .4s ease, transform .4s ease;
+  transform: translateY(24px);
+}
+.slide.active {
+  opacity: 1; pointer-events: all; transform: translateY(0);
+}
+
+/* ── 배경 테마 ── */
+.bg-dark  { background: #0a0b0f; color: #fff; }
+.bg-white { background: #fff; color: var(--text); }
+.bg-blue  { background: linear-gradient(135deg, #0057c2 0%, #003a8c 100%); color: #fff; }
+.bg-grid  {
+  background: #fff;
+  background-image: linear-gradient(rgba(0,112,243,.06) 1px, transparent 1px),
+                    linear-gradient(90deg, rgba(0,112,243,.06) 1px, transparent 1px);
+  background-size: 40px 40px;
+  color: var(--text);
+}
+
+/* ── 공통 텍스트 ── */
+.eyebrow {
+  font-size: 11px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--blue); margin-bottom: 14px; font-family: var(--mono);
+}
+.eyebrow.light { color: rgba(255,255,255,.6); }
+h1 { font-size: 56px; font-weight: 900; line-height: 1.08; }
+h2 { font-size: 40px; font-weight: 800; line-height: 1.15; }
+h3 { font-size: 22px; font-weight: 700; }
+.sub { font-size: 18px; font-weight: 300; opacity: .7; margin-top: 12px; line-height: 1.6; }
+.sub-sm { font-size: 14px; opacity: .6; margin-top: 8px; }
+
+/* ── 카드 ── */
+.card {
+  background: #fff; border-radius: 16px; padding: 28px 32px;
+  box-shadow: 0 4px 24px rgba(0,0,0,.08), 0 0 0 1px rgba(0,0,0,.05);
+}
+.card-dark {
+  background: rgba(255,255,255,.07); border-radius: 16px; padding: 28px 32px;
+  border: 1px solid rgba(255,255,255,.12);
+}
+
+/* ── 그리드 ── */
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; width: 100%; }
+.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; width: 100%; }
+.g4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; width: 100%; }
+
+/* ── 배지 ── */
+.badge {
+  display: inline-block; font-size: 11px; font-weight: 700; font-family: var(--mono);
+  padding: 4px 10px; border-radius: 5px; letter-spacing: .04em;
+}
+.badge-blue   { background: var(--blue-l); color: var(--blue-d); }
+.badge-green  { background: #d1fae5; color: #065f46; }
+.badge-amber  { background: #fef3c7; color: #92400e; }
+.badge-red    { background: #fee2e2; color: #b91c1c; }
+.badge-purple { background: #f5f3ff; color: var(--purple); }
+.badge-gray   { background: var(--gray-2); color: var(--gray-8); }
+
+/* ── 코드 블록 ── */
+.code {
+  background: #0d1117; color: #e6edf3; font-family: var(--mono);
+  border-radius: 10px; padding: 20px 24px; font-size: 13px; line-height: 1.8;
+  border: 1px solid rgba(255,255,255,.08); width: 100%;
+}
+.code .cm { color: #8b949e; }
+.code .kw { color: #ff7b72; }
+.code .st { color: #a5d6ff; }
+.code .nm { color: #d2a8ff; }
+.code .va { color: #ffa657; }
+.code .nu { color: #79c0ff; }
+
+/* ── 흐름 스텝 ── */
+.flow { display: flex; align-items: center; gap: 0; width: 100%; }
+.fstep {
+  flex: 1; background: var(--gray-1); border-radius: 10px; padding: 16px 14px;
+  text-align: center; border: 1.5px solid var(--gray-3);
+  font-size: 13px; font-weight: 500; position: relative;
+}
+.fstep .fn { font-size: 10px; color: var(--gray-6); font-family: var(--mono); margin-bottom: 4px; }
+.fstep-arrow { color: var(--gray-6); font-size: 18px; flex-shrink: 0; padding: 0 6px; }
+
+/* ── 비교 테이블 ── */
+.cmp { width: 100%; border-collapse: collapse; font-size: 14px; }
+.cmp th { background: var(--gray-1); padding: 10px 16px; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--gray-6); border-bottom: 2px solid var(--gray-3); }
+.cmp td { padding: 11px 16px; border-bottom: 1px solid var(--gray-2); }
+.cmp tr:last-child td { border-bottom: none; }
+.cmp tr:hover td { background: #f8f9ff; }
+.chk { color: var(--green); font-size: 16px; }
+.cross { color: var(--red); font-size: 16px; }
+
+/* ── 큰 숫자 ── */
+.big-stat { text-align: center; }
+.big-stat .num { font-size: 64px; font-weight: 900; font-family: var(--mono); line-height: 1; }
+.big-stat .lbl { font-size: 13px; color: var(--gray-6); margin-top: 6px; }
+
+/* ── 타임라인 ── */
+.timeline { width: 100%; }
+.tl-item { display: flex; gap: 20px; padding-bottom: 24px; position: relative; }
+.tl-item::before { content:''; position: absolute; left: 15px; top: 32px; bottom: 0; width: 1px; background: var(--gray-3); }
+.tl-item:last-child::before { display: none; }
+.tl-dot { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; flex-shrink: 0; font-family: var(--mono); color: #fff; margin-top: 2px; }
+.tl-content { flex: 1; }
+.tl-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+.tl-desc { font-size: 13px; color: var(--gray-6); line-height: 1.6; }
+
+/* ── 프로그레스 바 ── */
+.pbar { background: var(--gray-2); border-radius: 4px; height: 8px; overflow: hidden; margin-top: 8px; }
+.pbar-fill { height: 100%; border-radius: 4px; transition: width 1s ease; }
+
+/* ── 네비게이션 ── */
+.nav {
+  position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 10px; z-index: 100;
+  background: rgba(255,255,255,.08); backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,.12); border-radius: 100px;
+  padding: 8px 14px;
+}
+.nav-btn {
+  width: 34px; height: 34px; border-radius: 50%; border: 1px solid rgba(255,255,255,.15);
+  background: transparent; color: rgba(255,255,255,.7); cursor: pointer; font-size: 14px;
+  display: flex; align-items: center; justify-content: center; transition: all .15s;
+}
+.nav-btn:hover { background: rgba(255,255,255,.12); color: #fff; }
+.nav-pg { font-size: 12px; font-family: var(--mono); color: rgba(255,255,255,.5); min-width: 44px; text-align: center; }
+.dots { display: flex; gap: 6px; }
+.dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,.2); cursor: pointer; transition: all .2s; }
+.dot.on { background: var(--blue); width: 18px; border-radius: 3px; }
+
+/* ── 키보드 힌트 ── */
+.kb-hint {
+  position: fixed; bottom: 28px; right: 32px;
+  font-size: 10px; color: rgba(255,255,255,.25); font-family: var(--mono); letter-spacing: .06em;
+}
+
+/* ── 슬라이드 번호 ── */
+.slide-no {
+  position: absolute; top: 28px; right: 32px;
+  font-size: 11px; font-family: var(--mono); opacity: .3;
+}
+
+/* ── 타이틀 슬라이드 장식 ── */
+.title-deco {
+  position: absolute; top: -120px; right: -80px;
+  width: 500px; height: 500px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(0,112,243,.25) 0%, transparent 70%);
+  pointer-events: none;
+}
+.title-deco2 {
+  position: absolute; bottom: -100px; left: -60px;
+  width: 400px; height: 400px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(124,58,237,.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+/* ── 아이콘 이모지 박스 ── */
+.ico-box {
+  width: 52px; height: 52px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 12px;
+}
+
+/* ── 인용 박스 ── */
+.quote {
+  border-left: 3px solid var(--blue); padding: 12px 20px;
+  background: var(--blue-l); border-radius: 0 10px 10px 0;
+  font-size: 14px; color: var(--gray-8); font-style: italic; line-height: 1.7;
+}
+
+/* ── 체크리스트 ── */
+.checklist { list-style: none; }
+.checklist li { display: flex; align-items: flex-start; gap: 10px; padding: 7px 0; font-size: 14px; border-bottom: 1px solid var(--gray-2); }
+.checklist li:last-child { border-bottom: none; }
+.checklist li::before { content: '✓'; color: var(--green); font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+
+/* ── 섹션 제목 ── */
+.section-label {
+  position: absolute; top: 32px; left: 80px;
+  font-size: 10px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase;
+  color: var(--blue); font-family: var(--mono); opacity: .8;
+}
+
+/* 다크 슬라이드용 */
+.bg-dark .section-label { color: rgba(255,255,255,.3); }
+.bg-dark .nav-btn { /* 이미 적용됨 */ }
+</style>
+</head>
+<body>
+<div class="deck" id="deck">
+
+  <!-- ══ 01. 타이틀 ══════════════════════════════════════════════ -->
+  <div class="slide bg-dark active" data-idx="0">
+    <div class="title-deco"></div>
+    <div class="title-deco2"></div>
+    <div style="max-width:780px;width:100%;">
+      <div class="eyebrow light">SAP Fiori · Claude AI · 2026</div>
+      <h1 style="color:#fff;font-size:52px;line-height:1.1;">
+        Claude AI로<br>SAP Fiori 앱 개발하기
+      </h1>
+      <p class="sub" style="font-size:20px;max-width:560px;margin-top:20px;">
+        엑셀 데이터를 대시보드로 —<br>AI 협업 개발 사례
+      </p>
+      <div style="display:flex;gap:10px;margin-top:36px;flex-wrap:wrap;">
+        <span class="badge badge-blue">SAP Developer</span>
+        <span class="badge badge-purple">Claude AI</span>
+        <span class="badge badge-gray">MCP Tools</span>
+        <span class="badge badge-green">UI5 TypeScript</span>
+      </div>
+    </div>
+    <div class="slide-no">01 / 10</div>
+  </div>
+
+  <!-- ══ 02. 배경 — 문제 인식 ══════════════════════════════════ -->
+  <div class="slide bg-white" data-idx="1">
+    <div class="section-label">배경 / 문제 인식</div>
+    <div style="max-width:860px;width:100%;">
+      <div class="eyebrow">Problem</div>
+      <h2>데이터는 있는데,<br>현황을 파악하기 어렵다</h2>
+      <div style="margin-top:32px;" class="g2">
+        <div class="card" style="border-top:3px solid var(--red);">
+          <div style="font-size:28px;margin-bottom:12px;">📊</div>
+          <h3 style="font-size:16px;margin-bottom:10px;">현재 상황</h3>
+          <ul style="font-size:13px;color:var(--gray-6);line-height:2;padding-left:16px;">
+            <li>SD / MM / PP / FI / CO / CM 모듈</li>
+            <li>수백 개의 개발 프로그램</li>
+            <li>설계일 · 개발일 · 담당자 · M/D</li>
+            <li>→ <strong style="color:var(--text);">모두 엑셀로만 관리</strong></li>
+          </ul>
+        </div>
+        <div class="card" style="border-top:3px solid var(--blue);">
+          <div style="font-size:28px;margin-bottom:12px;">❓</div>
+          <h3 style="font-size:16px;margin-bottom:10px;">이런 질문에 바로 답하기 어렵다</h3>
+          <ul style="font-size:13px;color:var(--gray-6);line-height:2;list-style:none;">
+            <li>→ 지금 전체 개발 완료율은?</li>
+            <li>→ 마감 위험 프로그램은 몇 개?</li>
+            <li>→ CA / HQ / VN 구분별 진척은?</li>
+            <li>→ 설계 완료 후 아직 미개발은?</li>
+          </ul>
+        </div>
+      </div>
+      <div style="margin-top:16px;padding:14px 20px;background:#fff8e1;border-radius:10px;border:1px solid #fde68a;font-size:13px;color:#78350f;">
+        <strong>핵심:</strong> 데이터는 존재하지만, 한눈에 파악할 수 있는 <strong>시각화 도구</strong>가 없다
+      </div>
+    </div>
+    <div class="slide-no" style="color:var(--gray-6);">02 / 10</div>
+  </div>
+
+  <!-- ══ 03. 해결 방향 ══════════════════════════════════════════ -->
+  <div class="slide bg-grid" data-idx="2">
+    <div class="section-label">해결 방향</div>
+    <div style="max-width:860px;width:100%;">
+      <div class="eyebrow">Solution</div>
+      <h2>엑셀을 그대로 유지하면서<br>업로드만으로 대시보드 시각화</h2>
+      <div style="margin-top:32px;">
+        <div class="flow">
+          <div class="fstep" style="background:#eff6ff;border-color:#bfdbfe;">
+            <div class="fn">INPUT</div>
+            📁 엑셀 파일<br>업로드
+          </div>
+          <div class="fstep-arrow">→</div>
+          <div class="fstep">
+            <div class="fn">PARSE</div>
+            🔍 SheetJS<br>자동 파싱
+          </div>
+          <div class="fstep-arrow">→</div>
+          <div class="fstep">
+            <div class="fn">ANALYZE</div>
+            ⚙️ 상태 판단<br>로직 적용
+          </div>
+          <div class="fstep-arrow">→</div>
+          <div class="fstep" style="background:#f0fdf4;border-color:#a7f3d0;">
+            <div class="fn">OUTPUT</div>
+            📊 대시보드<br>즉시 렌더링
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:28px;" class="g3">
+        <div class="card">
+          <div class="ico-box" style="background:#eff6ff;">📌</div>
+          <h3 style="font-size:14px;">기획 → AI</h3>
+          <p style="font-size:12px;color:var(--gray-6);margin-top:6px;line-height:1.6;">요구사항을 Claude에게 설명<br>→ 데이터 구조 · 로직 설계</p>
+        </div>
+        <div class="card">
+          <div class="ico-box" style="background:#f0fdf4;">⚡</div>
+          <h3 style="font-size:14px;">프로토타입</h3>
+          <p style="font-size:12px;color:var(--gray-6);margin-top:6px;line-height:1.6;">HTML 단일 파일로 당일 완성<br>→ 실제 데이터로 즉시 검증</p>
+        </div>
+        <div class="card">
+          <div class="ico-box" style="background:#f5f3ff;">🚀</div>
+          <h3 style="font-size:14px;">Fiori App</h3>
+          <p style="font-size:12px;color:var(--gray-6);margin-top:6px;line-height:1.6;">SAP 표준 UI5 앱으로 전환<br>→ MCP 도구 활용</p>
+        </div>
+      </div>
+    </div>
+    <div class="slide-no" style="color:var(--gray-6);">03 / 10</div>
+  </div>
+
+  <!-- ══ 04. AI와 함께 기획 ══════════════════════════════════════ -->
+  <div class="slide bg-white" data-idx="3">
+    <div class="section-label">AI 기획 과정</div>
+    <div style="max-width:860px;width:100%;">
+      <div class="eyebrow">Planning with AI</div>
+      <h2>Claude에게 설명하면<br>설계가 나온다</h2>
+      <div style="margin-top:28px;" class="g2">
+        <div>
+          <div class="quote" style="margin-bottom:16px;">
+            "SD/MM/PP/FI/CO/CM 모듈별로 개발 현황이 있고,<br>
+            구분은 CA·HQ·VN으로 나뉩니다.<br>
+            마감은 2026-05-31이고 대시보드를 만들고 싶어요."
+          </div>
+          <p style="font-size:12px;color:var(--gray-6);margin-bottom:16px;">← Claude에게 전달한 내용 (전부)</p>
+          <div class="card" style="padding:16px 20px;">
+            <p style="font-size:12px;font-weight:700;margin-bottom:10px;color:var(--gray-8);">Claude가 도출한 설계 항목</p>
+            <ul class="checklist" style="font-size:12px;">
+              <li>필요한 KPI 6종 정의</li>
+              <li>상태 판단 로직 (가용일수 vs M/D)</li>
+              <li>구분별 차트 3종 구성</li>
+              <li>드릴다운 모달 2종 제안</li>
+            </ul>
+          </div>
+        </div>
+        <div>
+          <div class="code">
+<span class="cm">// 상태 판단 로직 (Claude가 설계·구현)</span>
+<span class="kw">function</span> <span class="nm">getStatus</span>(planDate, md, today) {
+  <span class="kw">const</span> av = <span class="nm">workdays</span>(today, planDate);
+
+  <span class="kw">if</span> (!planDate)   <span class="st">"일정미정"</span> <span class="cm">// 회색</span>
+  <span class="kw">if</span> (av &lt; md)     <span class="st">"마감초과"</span> <span class="cm">// 빨강</span>
+  <span class="kw">if</span> (p &gt; WARN_DT)  <span class="st">"위험"</span>    <span class="cm">// 주황</span>
+  <span class="kw">else</span>             <span class="st">"적정"</span>    <span class="cm">// 초록</span>
+}
+          </div>
+          <div style="margin-top:12px;font-size:12px;color:var(--gray-6);line-height:1.8;padding:12px 14px;background:var(--gray-1);border-radius:8px;">
+            <strong style="color:var(--text);">핵심:</strong> 로직의 "의도"를 설명하면<br>
+            Claude가 코드로 변환해준다
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="slide-no" style="color:var(--gray-6);">04 / 10</div>
+  </div>
+
+  <!-- ══ 05. 프로토타입 ══════════════════════════════════════════ -->
+  <div class="slide bg-dark" data-idx="4">
+    <div class="section-label">프로토타입 제작</div>
+    <div style="max-width:860px;width:100%;">
+      <div class="eyebrow light">Prototype — demo.html</div>
+      <h2 style="color:#fff;">HTML 단일 파일로<br>당일 검증 완료</h2>
+      <div style="margin-top:28px;" class="g2">
+        <div>
+          <div class="card-dark">
+            <p style="font-size:12px;color:rgba(255,255,255,.5);margin-bottom:14px;font-family:var(--mono);letter-spacing:.06em;text-transform:uppercase;">구현된 기능</p>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span style="font-size:18px;">📊</span>
+                <div>
+                  <div style="font-size:13px;font-weight:600;color:#fff;">KPI 카드 6개</div>
+                  <div style="font-size:11px;color:rgba(255,255,255,.4);">전체 / 설계완료 / 개발완료 / 잔여 / M/D / D-Day</div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span style="font-size:18px;">📈</span>
+                <div>
+                  <div style="font-size:13px;font-weight:600;color:#fff;">차트 3종</div>
+                  <div style="font-size:11px;color:rgba(255,255,255,.4);">구분별 완료/잔여 · M/D 도넛 · 상태별 분포</div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span style="font-size:18px;">🔍</span>
+                <div>
+                  <div style="font-size:13px;font-weight:600;color:#fff;">드릴다운 모달 2종</div>
+                  <div style="font-size:11px;color:rgba(255,255,255,.4);">설계완료 후 미개발 / 설계 미완료 목록</div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span style="font-size:18px;">🗂️</span>
+                <div>
+                  <div style="font-size:13px;font-weight:600;color:#fff;">모듈 탭</div>
+                  <div style="font-size:11px;color:rgba(255,255,255,.4);">ALL / SD / MM / PP / FI / CO / CM</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div class="card-dark">
+            <p style="font-size:11px;color:rgba(255,255,255,.4);margin-bottom:8px;font-family:var(--mono);">개발 프로세스</p>
+            <div class="timeline">
+              <div class="tl-item">
+                <div class="tl-dot" style="background:var(--blue);font-size:12px;">1</div>
+                <div class="tl-content">
+                  <div class="tl-title" style="color:#fff;font-size:13px;">Claude에게 기능 설명</div>
+                </div>
+              </div>
+              <div class="tl-item">
+                <div class="tl-dot" style="background:var(--purple);font-size:12px;">2</div>
+                <div class="tl-content">
+                  <div class="tl-title" style="color:#fff;font-size:13px;">HTML/CSS/JS 코드 생성</div>
+                </div>
+              </div>
+              <div class="tl-item">
+                <div class="tl-dot" style="background:var(--amber);font-size:12px;">3</div>
+                <div class="tl-content">
+                  <div class="tl-title" style="color:#fff;font-size:13px;">실제 엑셀로 즉시 테스트</div>
+                </div>
+              </div>
+              <div class="tl-item" style="padding-bottom:0;">
+                <div class="tl-dot" style="background:var(--green);font-size:12px;">4</div>
+                <div class="tl-content">
+                  <div class="tl-title" style="color:#fff;font-size:13px;">"이 부분 수정" → 반복</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style="background:rgba(5,150,105,.15);border:1px solid rgba(5,150,105,.3);border-radius:10px;padding:14px 16px;font-size:13px;color:#6ee7b7;">
+            💡 실제 코딩 없이<br>프로토타입 완성
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="slide-no">05 / 10</div>
+  </div>
+
+  <!-- ══ 06. Fiori 전환 이유 ══════════════════════════════════════ -->
+  <div class="slide bg-white" data-idx="5">
+    <div class="section-label">Fiori 전환</div>
+    <div style="max-width:860px;width:100%;">
+      <div class="eyebrow">Why Fiori App?</div>
+      <h2>프로토타입에서<br>SAP 표준 앱으로</h2>
+      <div style="margin-top:28px;">
+        <table class="cmp">
+          <thead>
+            <tr>
+              <th>항목</th>
+              <th>demo.html</th>
+              <th>SAP Fiori App</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="font-weight:600;">SAP 표준 UI (Horizon)</td>
+              <td><span class="cross">✗</span></td>
+              <td><span class="chk">✓</span></td>
+            </tr>
+            <tr>
+              <td style="font-weight:600;">Fiori Launchpad 통합</td>
+              <td><span class="cross">✗</span></td>
+              <td><span class="chk">✓</span></td>
+            </tr>
+            <tr>
+              <td style="font-weight:600;">타입 안전성 (TypeScript)</td>
+              <td><span class="cross">✗</span></td>
+              <td><span class="chk">✓</span></td>
+            </tr>
+            <tr>
+              <td style="font-weight:600;">BTP / S4HANA 배포</td>
+              <td><span class="cross">✗</span></td>
+              <td><span class="chk">✓</span></td>
+            </tr>
+            <tr>
+              <td style="font-weight:600;">빠른 검증</td>
+              <td><span class="chk">✓</span> <span style="font-size:11px;color:var(--gray-6);">당일 가능</span></td>
+              <td style="color:var(--gray-6);font-size:13px;">환경 설정 필요</td>
+            </tr>
+          </tbody>
+        </table>
+        <div style="margin-top:16px;padding:12px 18px;background:var(--blue-l);border-radius:10px;font-size:13px;color:var(--blue-d);">
+          <strong>전략:</strong> HTML로 빠르게 검증 → 확정 후 Fiori로 전환. 두 단계 모두 AI가 함께함.
+        </div>
+      </div>
+    </div>
+    <div class="slide-no" style="color:var(--gray-6);">06 / 10</div>
+  </div>
+
+  <!-- ══ 07. MCP 도구 ══════════════════════════════════════════ -->
+  <div class="slide bg-blue" data-idx="6">
+    <div class="section-label" style="color:rgba(255,255,255,.4);">MCP Tools</div>
+    <div style="max-width:860px;width:100%;">
+      <div class="eyebrow light">Model Context Protocol</div>
+      <h2 style="color:#fff;">MCP = Claude의<br>UI5 전문 지식 연결</h2>
+      <div style="margin-top:28px;" class="g2">
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div style="background:rgba(255,255,255,.1);border-radius:10px;padding:14px 18px;border:1px solid rgba(255,255,255,.15);">
+            <div style="font-family:var(--mono);font-size:11px;color:rgba(255,255,255,.5);margin-bottom:6px;">새 프로젝트 시작</div>
+            <code style="font-family:var(--mono);font-size:13px;color:#93c5fd;">get_guidelines</code>
+            <p style="font-size:12px;color:rgba(255,255,255,.6);margin-top:4px;">UI5 개발 원칙 자동 확인</p>
+          </div>
+          <div style="background:rgba(255,255,255,.1);border-radius:10px;padding:14px 18px;border:1px solid rgba(255,255,255,.15);">
+            <code style="font-family:var(--mono);font-size:13px;color:#93c5fd;">create_ui5_app</code>
+            <p style="font-size:12px;color:rgba(255,255,255,.6);margin-top:4px;">TypeScript 프로젝트 구조 생성</p>
+          </div>
+          <div style="background:rgba(255,255,255,.1);border-radius:10px;padding:14px 18px;border:1px solid rgba(255,255,255,.15);">
+            <code style="font-family:var(--mono);font-size:13px;color:#93c5fd;">get_api_reference</code>
+            <p style="font-size:12px;color:rgba(255,255,255,.6);margin-top:4px;">VizFrame, FileUploader 등 API 확인</p>
+          </div>
+          <div style="background:rgba(255,255,255,.1);border-radius:10px;padding:14px 18px;border:1px solid rgba(255,255,255,.15);">
+            <code style="font-family:var(--mono);font-size:13px;color:#93c5fd;">run_ui5_linter</code>
+            <p style="font-size:12px;color:rgba(255,255,255,.6);margin-top:4px;">코드 품질 및 표준 준수 검사</p>
+          </div>
+        </div>
+        <div>
+          <div style="background:rgba(255,255,255,.08);border-radius:12px;padding:20px 22px;border:1px solid rgba(255,255,255,.12);height:100%;">
+            <p style="font-size:12px;color:rgba(255,255,255,.5);margin-bottom:14px;font-family:var(--mono);text-transform:uppercase;letter-spacing:.08em;">이게 왜 중요한가</p>
+            <div style="display:flex;flex-direction:column;gap:16px;">
+              <div>
+                <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:4px;">UI5 경험 없이도 가능</div>
+                <div style="font-size:12px;color:rgba(255,255,255,.5);line-height:1.6;">MCP가 최신 UI5 가이드라인을 자동으로 제공하므로 Claude가 표준에 맞는 코드를 생성함</div>
+              </div>
+              <div>
+                <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:4px;">오류 시 원인 설명 포함</div>
+                <div style="font-size:12px;color:rgba(255,255,255,.5);line-height:1.6;">단순 코드 수정이 아닌 "왜 이렇게 해야 하는지" 이해하며 진행</div>
+              </div>
+              <div>
+                <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:4px;">프로토타입이 명세서 역할</div>
+                <div style="font-size:12px;color:rgba(255,255,255,.5);line-height:1.6;">demo.html이 있어 요구사항이 명확 → AI가 정확하게 구현</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="slide-no">07 / 10</div>
+  </div>
+
+  <!-- ══ 08. 기술 스택 ══════════════════════════════════════════ -->
+  <div class="slide bg-white" data-idx="7">
+    <div class="section-label">기술 스택</div>
+    <div style="max-width:860px;width:100%;">
+      <div class="eyebrow">Tech Stack — sap.dev.dashboard</div>
+      <h2>완성된 Fiori App의<br>구성 요소</h2>
+      <div style="margin-top:28px;" class="g4">
+        <div class="card" style="text-align:center;padding:20px 16px;">
+          <div style="font-size:32px;margin-bottom:10px;">🧩</div>
+          <div style="font-size:11px;color:var(--gray-6);margin-bottom:4px;font-family:var(--mono);">FRAMEWORK</div>
+          <div style="font-weight:700;font-size:14px;">SAPUI5</div>
+          <div style="font-size:11px;color:var(--gray-6);">1.146.0</div>
+        </div>
+        <div class="card" style="text-align:center;padding:20px 16px;">
+          <div style="font-size:32px;margin-bottom:10px;">💎</div>
+          <div style="font-size:11px;color:var(--gray-6);margin-bottom:4px;font-family:var(--mono);">LANGUAGE</div>
+          <div style="font-weight:700;font-size:14px;">TypeScript</div>
+          <div style="font-size:11px;color:var(--gray-6);">타입 안전성</div>
+        </div>
+        <div class="card" style="text-align:center;padding:20px 16px;">
+          <div style="font-size:32px;margin-bottom:10px;">📊</div>
+          <div style="font-size:11px;color:var(--gray-6);margin-bottom:4px;font-family:var(--mono);">CHART</div>
+          <div style="font-weight:700;font-size:14px;">sap.viz</div>
+          <div style="font-size:11px;color:var(--gray-6);">VizFrame</div>
+        </div>
+        <div class="card" style="text-align:center;padding:20px 16px;">
+          <div style="font-size:32px;margin-bottom:10px;">📁</div>
+          <div style="font-size:11px;color:var(--gray-6);margin-bottom:4px;font-family:var(--mono);">EXCEL</div>
+          <div style="font-weight:700;font-size:14px;">xlsx</div>
+          <div style="font-size:11px;color:var(--gray-6);">SheetJS npm</div>
+        </div>
+      </div>
+      <div style="margin-top:20px;" class="g2">
+        <div class="card">
+          <p style="font-size:11px;font-family:var(--mono);color:var(--gray-6);margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em;">프로젝트 구조</p>
+          <div class="code" style="font-size:12px;padding:14px 16px;">
+<span style="color:#8b949e;">webapp/</span>
+  <span style="color:#a5d6ff;">controller/</span>Main.controller.ts
+  <span style="color:#a5d6ff;">view/</span>Main.view.xml
+  <span style="color:#a5d6ff;">model/</span>formatter.ts
+  <span style="color:#a5d6ff;">i18n/</span>i18n.properties
+  <span style="color:#ffa657;">manifest.json</span>   <span style="color:#8b949e;">← 라우팅/모델</span>
+          </div>
+        </div>
+        <div class="card">
+          <p style="font-size:11px;font-family:var(--mono);color:var(--gray-6);margin-bottom:10px;text-transform:uppercase;letter-spacing:.06em;">실행 방법</p>
+          <div class="code" style="font-size:12px;padding:14px 16px;">
+<span class="cm"># 서버 시작</span>
+<span class="kw">npm</span> start
+
+<span class="cm"># 브라우저 접속</span>
+<span class="st">localhost:8080/index.html</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="slide-no" style="color:var(--gray-6);">08 / 10</div>
+  </div>
+
+  <!-- ══ 09. 결과 ══════════════════════════════════════════════ -->
+  <div class="slide bg-dark" data-idx="8">
+    <div class="section-label">결과</div>
+    <div style="max-width:860px;width:100%;">
+      <div class="eyebrow light">Results</div>
+      <h2 style="color:#fff;">AI 협업 개발로<br>달라진 것들</h2>
+      <div style="margin-top:28px;" class="g2">
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <div class="card-dark">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <span style="font-size:28px;">⚡</span>
+              <div>
+                <div style="font-size:14px;font-weight:700;color:#fff;">빠른 프로토타이핑</div>
+                <div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:3px;">기획 → 동작하는 화면, <strong style="color:#93c5fd;">당일 완성</strong></div>
+              </div>
+            </div>
+          </div>
+          <div class="card-dark">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <span style="font-size:28px;">🔄</span>
+              <div>
+                <div style="font-size:14px;font-weight:700;color:#fff;">즉각적인 피드백 반영</div>
+                <div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:3px;">"이 부분 바꿔줘" → 즉시 반영</div>
+              </div>
+            </div>
+          </div>
+          <div class="card-dark">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <span style="font-size:28px;">🎯</span>
+              <div>
+                <div style="font-size:14px;font-weight:700;color:#fff;">SAP 표준 준수</div>
+                <div style="font-size:12px;color:rgba(255,255,255,.5);margin-top:3px;">UI5 경험 없이 MCP로 표준 확보</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div style="background:rgba(255,255,255,.06);border-radius:12px;padding:22px;border:1px solid rgba(255,255,255,.1);">
+            <p style="font-size:11px;color:rgba(255,255,255,.4);font-family:var(--mono);margin-bottom:16px;text-transform:uppercase;letter-spacing:.08em;">개발 흐름 비교</p>
+            <div style="margin-bottom:16px;">
+              <div style="font-size:12px;color:rgba(255,255,255,.5);margin-bottom:6px;">기존 방식</div>
+              <div class="flow" style="gap:0;">
+                <div style="flex:1;background:rgba(220,38,38,.2);border-radius:6px;padding:8px;text-align:center;font-size:11px;color:#fca5a5;">요구사항</div>
+                <div style="color:rgba(255,255,255,.3);padding:0 4px;font-size:12px;">→</div>
+                <div style="flex:1;background:rgba(220,38,38,.2);border-radius:6px;padding:8px;text-align:center;font-size:11px;color:#fca5a5;">설계</div>
+                <div style="color:rgba(255,255,255,.3);padding:0 4px;font-size:12px;">→</div>
+                <div style="flex:1;background:rgba(220,38,38,.2);border-radius:6px;padding:8px;text-align:center;font-size:11px;color:#fca5a5;">개발</div>
+                <div style="color:rgba(255,255,255,.3);padding:0 4px;font-size:12px;">→</div>
+                <div style="flex:1;background:rgba(220,38,38,.2);border-radius:6px;padding:8px;text-align:center;font-size:11px;color:#fca5a5;">검증</div>
+              </div>
+            </div>
+            <div>
+              <div style="font-size:12px;color:rgba(255,255,255,.5);margin-bottom:6px;">AI 협업 방식</div>
+              <div class="flow" style="flex-direction:column;gap:6px;align-items:stretch;">
+                <div style="background:rgba(5,150,105,.2);border-radius:6px;padding:8px;text-align:center;font-size:11px;color:#6ee7b7;">요구사항 → 프로토타입 (당일)</div>
+                <div style="background:rgba(5,150,105,.2);border-radius:6px;padding:8px;text-align:center;font-size:11px;color:#6ee7b7;">검증 / 피드백 반영 (즉시)</div>
+                <div style="background:rgba(5,150,105,.2);border-radius:6px;padding:8px;text-align:center;font-size:11px;color:#6ee7b7;">실제 앱 전환 (수일)</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="slide-no">09 / 10</div>
+  </div>
+
+  <!-- ══ 10. 시사점 / 마무리 ══════════════════════════════════════ -->
+  <div class="slide bg-blue" data-idx="9">
+    <div style="max-width:780px;width:100%;text-align:center;">
+      <div class="eyebrow light">Takeaway</div>
+      <h2 style="color:#fff;font-size:44px;">AI는 개발 속도를 높이는 도구다<br><span style="opacity:.6;font-size:32px;">방향은 여전히 사람이 결정한다</span></h2>
+      <div style="margin-top:36px;" class="g3">
+        <div style="background:rgba(255,255,255,.1);border-radius:14px;padding:22px 18px;border:1px solid rgba(255,255,255,.15);">
+          <div style="font-size:28px;margin-bottom:10px;">🧭</div>
+          <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:6px;">기획이 핵심</div>
+          <div style="font-size:12px;color:rgba(255,255,255,.55);line-height:1.6;">"무엇을 만들지"를 명확히 할수록 AI가 더 잘 만들어준다</div>
+        </div>
+        <div style="background:rgba(255,255,255,.1);border-radius:14px;padding:22px 18px;border:1px solid rgba(255,255,255,.15);">
+          <div style="font-size:28px;margin-bottom:10px;">🔧</div>
+          <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:6px;">도구를 적극 활용</div>
+          <div style="font-size:12px;color:rgba(255,255,255,.55);line-height:1.6;">MCP 연결로 Claude가 SAP 전문 지식을 자동으로 참조</div>
+        </div>
+        <div style="background:rgba(255,255,255,.1);border-radius:14px;padding:22px 18px;border:1px solid rgba(255,255,255,.15);">
+          <div style="font-size:28px;margin-bottom:10px;">🔁</div>
+          <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:6px;">빠른 반복</div>
+          <div style="font-size:12px;color:rgba(255,255,255,.55);line-height:1.6;">프로토타입으로 먼저 검증, 확정 후 표준 앱으로 전환</div>
+        </div>
+      </div>
+      <div style="margin-top:32px;padding:16px 24px;background:rgba(255,255,255,.08);border-radius:10px;border:1px solid rgba(255,255,255,.15);font-size:14px;color:rgba(255,255,255,.8);">
+        SAP Developer + Claude AI + MCP = <strong style="color:#fff;">새로운 개발 패러다임</strong>
+      </div>
+    </div>
+    <div class="slide-no">10 / 10</div>
+  </div>
+
+</div>
+
+<!-- ── 네비게이션 ── -->
+<div class="nav">
+  <button class="nav-btn" id="btnPrev" onclick="go(-1)">&#8592;</button>
+  <div class="dots" id="dots"></div>
+  <span class="nav-pg" id="pg">1 / 10</span>
+  <button class="nav-btn" id="btnNext" onclick="go(1)">&#8594;</button>
+</div>
+<div class="kb-hint">← → Space 로 이동 &nbsp;·&nbsp; F 전체화면</div>
+
+<script>
+const slides = document.querySelectorAll('.slide');
+const dotsEl  = document.getElementById('dots');
+const pgEl    = document.getElementById('pg');
+let cur = 0;
+
+// 점 생성
+slides.forEach((_, i) => {
+  const d = document.createElement('div');
+  d.className = 'dot' + (i === 0 ? ' on' : '');
+  d.onclick = () => show(i);
+  dotsEl.appendChild(d);
+});
+
+function show(n) {
+  slides[cur].classList.remove('active');
+  dotsEl.children[cur].classList.remove('on');
+  cur = Math.max(0, Math.min(n, slides.length - 1));
+  slides[cur].classList.add('active');
+  dotsEl.children[cur].classList.add('on');
+  pgEl.textContent = (cur + 1) + ' / ' + slides.length;
+}
+function go(d) { show(cur + d); }
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); go(1); }
+  if (e.key === 'ArrowLeft')  { e.preventDefault(); go(-1); }
+  if (e.key === 'f' || e.key === 'F') {
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen();
+    else document.exitFullscreen();
+  }
+});
+
+// 터치 스와이프
+let tx = 0;
+document.addEventListener('touchstart', e => tx = e.touches[0].clientX);
+document.addEventListener('touchend',   e => {
+  const dx = e.changedTouches[0].clientX - tx;
+  if (Math.abs(dx) > 50) go(dx < 0 ? 1 : -1);
+});
+</script>
+</body>
+</html>
