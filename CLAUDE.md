@@ -1,4 +1,4 @@
-# SAP UI5 / Fiori 개발 지침
+# SAP UI5 / Fiori 개발 지침!
 
 이 디렉토리는 SAP UI5 Fiori 앱 개발 프로젝트입니다.
 사용자는 UI5 개발 경험이 없으므로 Claude가 전문가 역할을 담당합니다.
